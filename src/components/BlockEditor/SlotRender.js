@@ -1,18 +1,25 @@
-
 export default {
+    name: "slot-render",
     render(h){
         const slot = this.$slots.default.find(x=>(x.componentOptions||x.asyncMeta).tag == this.tag);
-        console.log('SlotRender: slot', this.block_id, this, slot)
         if(slot) {
             if(slot.asyncMeta){
                 return (<div></div>);
             }else{
-                return slot;
+                let r = undefined;
+                if(!this.dataRef){
+                    // block-editor slot
+                    r = h(slot.asyncFactory, this.$slots.default);
+                }else{
+                    // prop-editor slot
+                    r = h(slot.asyncFactory, {class:'show_property_popup', attrs: {isPropEditor: 'yes'}}, this.$slots.default);
+                }
+                return (r);
             }
         }
-        return (<div>Block template not found.</div>);
+        return (<div>Block template not found. Try to add it as a slot to this block-editor element.</div>);
     },
-	props: ['tag', 'block_id'],
+	props: ['tag', 'block_id', 'dataRef'],
     data(){
         return {
             setDataQuery: [],
@@ -32,9 +39,18 @@ export default {
             this.setDataQuery.push(d);
         },
         slotMounted(_this){
-            console.log('SlotRender: slot',this.block_id,'mounted!')
+            // console.log('SlotRender: slot',_this,'mounted!');
+            let rootComponent = _this.$children[0].$vnode.componentOptions?.Ctor.extendOptions.name;
+            if(rootComponent != 'block-content') console.warn("Root component of block template must be <block-content>.");
+            if(this.dataRef) {
+                // console.log('SlotRender: dataRef',this.dataRef[0].$children[0])
+                // console.log('SlotRender: dataRef _this', _this)
+                _this._data = this.dataRef[0].$children[0]._data;
+            }
             this.isSlotMounted = true;
-            for(let d of this.setDataQuery) this._setData(d);
+            _this.$forceUpdate();
+            if(!this.dataRef) for(let d of this.setDataQuery) this._setData(d);
+            return this.$emit("slotMounted", {block_id: this.block_id, module: _this});
         },
         _setData(d){
             if(this.$children.length == 0) return;
@@ -43,9 +59,19 @@ export default {
             }else{
                 return new Error(`SlotRender: missing method setData()  in ${this.tag} template.`)
             }
+        },
+        unselectAllChildren(){
+            if(this.$children.length == 0) return;
+            if(this.$children[0]){
+                for(let element of this.$children[0].$children[0].$children){
+                    if(element.$vnode.componentOptions.Ctor.extendOptions.name == 'block-editor'){
+                        element.unselectAllChildren();
+                    }
+                }
+            }
         }
     },
     mounted(){
-        console.log("SlotRender mnt this", this);
+        // console.log("SlotRender mnt this", this);
     }
 }
