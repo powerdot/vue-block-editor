@@ -1,15 +1,12 @@
 <template>
 	<block-content>
         {{title}}
-        <block-editor ref="blockEditor" @Compiled="BlocksCompiled" layout="editor-only" group='insidina_editor'>
-            <linka name="Ссылочка" id="_link_rnd"/>
+        <block-editor ref="blockEditor" @Compiled="BlocksCompiled" layout="editor-only" group='editor_group'>
             <textik name="Текстичек"/>
 			<inside name="Инсайдина" id="_rnd_insider"/>
+			<calc name="Калькулэйтор" id="_rnd_calc"/>
+            <templateError>Другая ошибка</templateError>
 		</block-editor>
-            <!-- <component v-for="slot of $slots.default" :is="slot.componentOptions.tag" :name="slot.data.attrs.name"></component>
-            <div v-for="slot of $slots.default">
-                {{slot.componentOptions.tag}} - {{slot.data.attrs.name}}
-            </div> -->
 
         <propertyPopup title="для инсайдиы">
             Название блока: 
@@ -31,6 +28,7 @@ export default {
 		linka: ()=> import("./link"),
 		inside: ()=> import("./inside"),
 		textik: ()=> import("./tekstik"),
+		calc: ()=> import("./calc"),
 	},
 	data: ()=>{
 		return {

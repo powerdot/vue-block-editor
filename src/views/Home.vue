@@ -1,11 +1,14 @@
 <template>
 	<div class="container">
 		<!-- <button @click='load'>load</button> -->
-		<block-editor ref="blockEditor" @Compiled="BlocksCompiled" >
+		<block-editor ref="blockEditor" @Compiled="BlocksCompiled" group='editor_group'>
 			<textik name="Текстичек"/>
-			<linka name="Ссылочка" id="_link_rnd"/>
-			<selectbox name="Селекбоксина" id="_rnd_selectbox"/>
-			<inside name="Инсайдина" id="_rnd_insider"/>
+			<linka name="Ссылочка" proto_id="_link_rnd"/>
+			<selectbox name="Селекбоксина" proto_id="_rnd_selectbox"/>
+			<inside name="Инсайдина" proto_id="_rnd_insider"/>
+			<templateError>
+				Упс! Блок не принадлежит этому элементу!
+			</templateError>
 		</block-editor>
 	</div>
 </template>
@@ -15,39 +18,23 @@ import BlockEditor from '../components/BlockEditor';
 
 let newData = [
     {
-        "name": "Текстичек",
-        "tag": "textik",
-        "id": "72586829",
-        "data": {
-            "textColor": "red",
-            "num": 3
-        }
-    },
-    {
         "name": "Инсайдина",
-        "id": "_59812028_insider",
+        "proto_id": "_rnd_insider",
         "tag": "inside",
+        "id": "_64472827_insider",
         "data": {
-            "title": "hgjhgj",
+            "title": "ЭТО ИНСАЙДИНА ОГО",
             "block_editor": [
                 {
-                    "name": "Ссылочка",
-                    "id": "_link_61528855",
-                    "tag": "linka",
+                    "name": "Калькулэйтор",
+                    "tag": "calc",
+                    "id": "59424535",
                     "data": {
-                        "link": "sdfsdf"
+                        "amount": 1,
+                        "count": 5
                     }
                 }
             ]
-        }
-    },
-    {
-        "name": "Текстичек",
-        "tag": "textik",
-        "id": "57615275",
-        "data": {
-            "textColor": "pink",
-            "num": 3
         }
     }
 ];

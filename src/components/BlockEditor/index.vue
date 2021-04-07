@@ -7,7 +7,7 @@
                 draggable=".item"
                 :group="{ name: editor_group, pull: 'clone', put: false }"
                 :clone="cloneBlockProto"
-                v-for="block in availableBlocks" :key="block.id"
+                v-for="block in availableBlocks" :key="block.tag"
             >
                 <div class="item block">
                     {{block.name}}
@@ -15,7 +15,7 @@
             </draggable>
             <button @click='Compile'>Compile!</button>
 		</div>
-		<div :class="{editor: true, [layout]: true}" v-if="layout_options.editor">
+		<div :class="{editor: true, [layout]: true}" v-if="layout_options.editor" @click="unselectInBlockEditor(true)">
             <draggable 
                 class="dragArea list-group"
                 v-model="editor" 
@@ -38,6 +38,12 @@
                     <div :class="{removeBlock: true}" @click="removeBlockFromEditor($event,block)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
                             <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </div>
+                    <div :class="{copyBlock: true}" @click="copyBlock($event,block)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
                         </svg>
                     </div>
                 </div>
@@ -63,6 +69,8 @@
 </template>
 
 <script>
+
+let errorTypes = ['propertyEditorTemplateError', 'templateError'];
 
 import SlotRender from './SlotRender.js';
 import draggable from 'vuedraggable'
@@ -104,7 +112,10 @@ export default {
             tempDragData: {},
             selectedBlock: null,
             _cachedMainEditor: null,
-            selectBlockAfterMount: null
+            selectBlockAfterMount: null,
+            copyBuffer: [],
+            registeredEditors: [],
+            errorTypes
 		}
 	},
 	methods: {
@@ -115,16 +126,17 @@ export default {
             //
         },
         slotMounted(slot_data){
-            // console.log("slotMounted:", slot_data)
+            console.log("slotMounted:", slot_data)
             if(this.selectBlockAfterMount){
                 if(this.selectBlockAfterMount.id == slot_data.block_id){
                     this.SlotClick(this.selectBlockAfterMount);
                 }
             }
+            this.selectBlockAfterMount = null;
         },
 		addBlockToEditor(block, block_i){
 			let block_proto = JSON.parse(JSON.stringify(block));
-            block_proto.id = this.parseID(block_proto);
+            block_proto.id = block_proto.id||this.parseID(block_proto);
             delete block_proto.data;
             block_proto.selected = false;
             if(typeof block_i != 'undefined'){
@@ -132,6 +144,7 @@ export default {
             }else{
                 this.editor.push(block_proto);
             }
+            console.log('block_proto:', block_proto)
             return block_proto;
 		},
         removeBlockFromEditor(e,block){
@@ -139,14 +152,27 @@ export default {
             this.mainEditor().setSelectedBlock(null);
             e.stopPropagation();
         },
+        copyBlock(e,block){
+            let copied_block_structure = JSON.parse(JSON.stringify(this.editor)).find(x=>x.id==block.id);
+            console.log("asdadasd", copied_block_structure)
+            delete copied_block_structure.selected;
+            delete copied_block_structure.id;
+            copied_block_structure.data = this.$refs[block.id][0].getData();
+            this.mainEditor().addToCopyBuffer(copied_block_structure)
+        },
         cloneBlockProto(block){
             let block_proto = JSON.parse(JSON.stringify(block));
             block_proto.id = this.parseID(block_proto);
             return block_proto;
         },
+        addToCopyBuffer(copied_block){
+            console.log('copied_block', copied_block)
+            this.copyBuffer.push(copied_block);
+            console.log('copyBuffer', this.copyBuffer)
+        },
         parseID(block){
-            if(!block.id) return Math.floor(Math.random()*99999999).toString();
-            return block.id.replace(/rnd/g, Math.floor(Math.random()*99999999).toString());
+            if(!block.proto_id) return Math.floor(Math.random()*99999999).toString();
+            return block.proto_id.replace(/rnd/g, Math.floor(Math.random()*99999999).toString());
         },
 
 		CustomBlockClick(e){ },
@@ -194,12 +220,14 @@ export default {
             // console.log("BlockDragStart block_id",block_id)
             // console.log("BlockDragStart block", block);
             // console.log("BlockDragStart data", data);
-            if(!window.tempDragDataBlockEditor) window.tempDragDataBlockEditor = {};
             window.tempDragDataBlockEditor[block_id] = data;
             
         },
         BlockDragEnd(e){
-            // let children = e.to.children[e.newDraggableIndex].children[1];
+            let children = e.to.children[e.newDraggableIndex].children[1];
+            let block_id = children.id;
+            let block_to_select = this.editor.find(x=>x.id==block_id);
+            if(block_to_select) this.SlotClick(block_to_select)
         },
         BlockDragAdded(e){
             // console.log("BlockDragAdded event",e)
@@ -218,13 +246,85 @@ export default {
                     window.tempDragDataBlockEditor[block_id] = {};
                 }
             }
+            let block_to_select = this.editor.find(x=>x.id==block_id);
+            if(block_to_select) this.SlotClick(block_to_select);
         },
         BlockDragChoosed(e){ },
         SlotClick(block, event){
-            this.mainEditor().setSelectedBlock({ref: this.$refs[block.id],...block});
-            this.unselectInBlockEditor(true);
-            block.selected = true;
+            this.mainEditor().setSelectedBlock(null);
+            this.$nextTick(()=>{
+                this.mainEditor().setSelectedBlock({ref: this.$refs[block.id],...block});
+                this.unselectInBlockEditor(true);
+                block.selected = true;
+                
+                // Получение доступных слотов для работы в editor-окружении с этим слотом
+                // поиск внизу
+                let blocks_editors_inside_slot = (this.$refs[block.id][0].$children[0].$children[0].$children||[]).filter(x=>x.$vnode.componentOptions.Ctor.extendOptions.name=='block-editor');
+                let slots_inside_slot = [];
+                for(let editor of blocks_editors_inside_slot) slots_inside_slot.push(...editor.$slots.default.filter(x=>!errorTypes.includes(x.tag)))
+                // поиск первого parent edit-блока
+                if(slots_inside_slot.length == 0){
+                    let closest_parent_block_editor = undefined;
+                    let current_parent = this.$refs[block.id][0];
+                    for(;;){
+                        if(!current_parent.$vnode) break;
+                        console.log(block.tag,current_parent.$vnode.componentOptions.Ctor.extendOptions.name, current_parent.$vnode)
+                        if(current_parent.$vnode.componentOptions.Ctor.extendOptions.name == 'block-editor'){
+                            closest_parent_block_editor = current_parent;
+                            break;
+                        }
+                        current_parent = current_parent.$parent;
+                    }
+                    if(closest_parent_block_editor){
+                        if(closest_parent_block_editor.$slots?.default){
+                            let slots = closest_parent_block_editor.$slots.default.filter(x=>!errorTypes.includes(x.tag));
+                            slots_inside_slot.push(...slots);
+                        }
+                    }
+                }
+
+                // console.log("closest_parent_block_editor",closest_parent_block_editor)
+                // console.log("slots_inside_slot", slots_inside_slot)
+                if(slots_inside_slot.length != 0) {
+                    let new_slots = [];
+                    for(let s of slots_inside_slot){
+                        if(new_slots.find(x=>x.tag==s.tag)) continue;
+                        new_slots.push(s);
+                    }
+                    this.mainEditor().setAvailableBlocks(new_slots);
+                }
+            })
             if(event) event.stopPropagation();
+        },
+        // TODO: too much calls? Check it on console
+        setAvailableBlocks(slots){
+            console.log("setAvailableBlocks slots", slots)
+            let all_slots = this.mainEditor().registeredEditors.map(x=>x.$slots.default).flat().filter(x=>!errorTypes.includes(x.tag));
+            console.log("setAvailableBlocks all_slots", all_slots)
+            
+            let super_all_slots = [...slots, ...all_slots];
+
+            let new_slots = [];
+            for(let s of super_all_slots){
+                if(new_slots.find(x=>x.tag==s.tag)) continue;
+                new_slots.push(s);
+            }
+
+            console.log("setAvailableBlocks new_slots", new_slots)
+
+            this.availableBlocks = [];
+            if(slots){
+                for(let slot of slots){
+                    if(errorTypes.includes(slot.tag)) continue;
+                    let attrs = slot.data?slot.data.attrs:slot.asyncMeta.data.attrs;
+                    let tag = slot.componentOptions?slot.componentOptions.tag:slot.asyncMeta.tag;
+                    this.availableBlocks.push({
+                        name: attrs.name,
+                        proto_id: attrs.proto_id,
+                        tag
+                    })
+                }
+            }
         },
         unselectInBlockEditor(user_event=false){
             for(let b of this.editor){
@@ -234,6 +334,7 @@ export default {
                     // hide old prop pops
                 }
             }
+            this.setAvailableBlocks(this.$slots.default)
             this.$forceUpdate();
             if(user_event){
                 this.mainEditor().unselectAllChildren();
@@ -255,28 +356,23 @@ export default {
             return main_editor;
         },
         setSelectedBlock(block){
-            console.log("SELECT BLOCK", block)
             this.selectedBlock = block;
         },
         unselectAllChildren(){
             this.unselectInBlockEditor();
             for(let block of this.editor) this.$refs[block.id][0].unselectAllChildren();
+        },
+        registerEditor(editor){
+            this.registeredEditors.push(editor);
+            console.log('RegisterEditor', this.registeredEditors)
         }
 	},
-    beforeMount(){
+    mounted(){
+        if(!window.tempDragDataBlockEditor) window.tempDragDataBlockEditor = {};
         this.editor_group = this.group.replace(/rnd/g, Math.floor(Math.random()*99999999).toString());
-        // console.log("main bmnt this", this)
-        if(this.$slots.default){
-            for(let slot of this.$slots.default){
-                let attrs = slot.data?slot.data.attrs:slot.asyncMeta.data.attrs;
-                let tag = slot.componentOptions?slot.componentOptions.tag:slot.asyncMeta.tag;
-                this.availableBlocks.push({
-                    name: attrs.name,
-                    id: attrs.id,
-                    tag
-                })
-            }
-        }
+
+        this.setAvailableBlocks(this.$slots.default);
+
         if(this.layout == "full"){
             this.layout_options.menu = true;
             this.layout_options.editor = true;
@@ -284,12 +380,13 @@ export default {
             this.layout_options.menu = false;
             this.layout_options.editor = true;
         }
+
         // console.log("main availableBlocks length:", this.availableBlocks.length);
-    },
-    mounted(){
         // console.log("main mnt this", this)
+
         this.loaded = true;
         for(let d of this.setDataQuery) this._setData(d);
+        this.mainEditor().registerEditor(this);
     }
 }
 </script>
@@ -330,12 +427,31 @@ export default {
                 right: 15px;
                 transition: 0.3s all;
             }
+            .copyBlock{
+                opacity: 0.2;
+                position: absolute;
+                cursor pointer;
+                top: 9px;
+                right: 35px;
+                transition: 0.3s all;
+                .bi-clipboard{
+                    transform: scale(0.8);
+                }
+            }
             &:hover{
                 .removeBlock{
                     opacity: 0.5;
                 }
+                .copyBlock{
+                    opacity: 0.5;
+                }
             }
             .removeBlock{
+                &:hover{
+                    opacity: 1;
+                }
+            }
+            .copyBlock{
                 &:hover{
                     opacity: 1;
                 }
@@ -379,20 +495,4 @@ export default {
     display: none;
 }
 
-// .editor [block_id] .property_popup{
-//     display: none;
-// }
-// .propedit .show_property_popup{
-//     font-size: 0 !important;
-//     color: rgba(0,0,0,0) !important;
-// }
-// .propedit .show_property_popup *{
-//     display: none !important;
-// }
-// .propedit .show_property_popup .property_popup,
-// .propedit .show_property_popup .property_popup *{
-//     display: block !important;
-//     font-size: initial !important;
-//     color: black !important;
-// }
 </style>
