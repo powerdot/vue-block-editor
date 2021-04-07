@@ -4,12 +4,13 @@
             <draggable
                 class='dragArea list-group'
                 :list="[block]"
-                draggable=".item"
+                :draggable="`.slot-draggable-${block.tag}`"
                 :group="{ name: editor_group, pull: 'clone', put: false }"
                 :clone="cloneBlockProto"
+                :move="moveBlock"
                 v-for="block in availableBlocks" :key="block.tag"
             >
-                <div class="item block">
+                <div :class="{block:true, active: block.active, [`slot-draggable-${block.tag}`]: true}">
                     {{block.name}}
                 </div>
             </draggable>
@@ -17,7 +18,7 @@
 		</div>
 		<div :class="{editor: true, [layout]: true}" v-if="layout_options.editor" @click="unselectInBlockEditor(true)">
             <draggable 
-                class="dragArea list-group"
+                :class="['dragArea', 'list-group', ...draggableClasses]"
                 v-model="editor" 
                 draggable=".item"
                 :group="editor_group"
@@ -27,8 +28,9 @@
                 @choose="BlockDragChoosed"
                 ghost-class="ghost"
                 :touchStartThreshold="20"
+                :move="moveBlock"
             >
-                <div class='item' v-for='(block, block_i) of editor' :key="block.id" :tag="block.tag" :block_id="block.id" @click="SlotClick(block, $event)">
+                <div :class='["item", "slot-draggable-"+block.tag]' v-for='(block, block_i) of editor' :key="block.id" :tag="block.tag" :block_id="block.id" @click="SlotClick(block, $event)">
                     <add-block :newBlockIndex="block_i" :availableBlocks="availableBlocks" @addBlock="modalMenuAddBlock"></add-block>
                     <div :class="{block:true, selected: block.selected}" :id='block.id'>
                         <SlotRender :ref="block.id" :tag="block.tag" :block_id="block.id" @slotMounted="slotMounted">
@@ -115,10 +117,19 @@ export default {
             selectBlockAfterMount: null,
             copyBuffer: [],
             registeredEditors: [],
-            errorTypes
+            errorTypes,
+            loadedSlots: 0,
+            draggableClasses: []
 		}
 	},
 	methods: {
+        moveBlock(e){
+            let to_classes = [...e.to.classList];
+            let el_class = [...e.dragged.classList].filter(x=>x.includes('slot-draggable'))[0]
+            let can_place = to_classes.includes(el_class);
+            // console.log(can_place, e)
+            return can_place;
+        },
         modalMenuAddBlock(block, block_i){
             let new_block = this.addBlockToEditor(block, block_i);
             this.selectBlockAfterMount = new_block;
@@ -132,6 +143,7 @@ export default {
                     this.SlotClick(this.selectBlockAfterMount);
                 }
             }
+            this.mainEditor().setAvailableBlocks(this.mainEditor().$slots.default);
             this.selectBlockAfterMount = null;
         },
 		addBlockToEditor(block, block_i){
@@ -144,7 +156,6 @@ export default {
             }else{
                 this.editor.push(block_proto);
             }
-            console.log('block_proto:', block_proto)
             return block_proto;
 		},
         removeBlockFromEditor(e,block){
@@ -297,34 +308,40 @@ export default {
             if(event) event.stopPropagation();
         },
         // TODO: too much calls? Check it on console
-        setAvailableBlocks(slots){
-            console.log("setAvailableBlocks slots", slots)
+        setAvailableBlocks(slots=[], all_available=false){
+            // console.log("setAvailableBlocks slots", slots)
             let all_slots = this.mainEditor().registeredEditors.map(x=>x.$slots.default).flat().filter(x=>!errorTypes.includes(x.tag));
-            console.log("setAvailableBlocks all_slots", all_slots)
-            
-            let super_all_slots = [...slots, ...all_slots];
-
-            let new_slots = [];
-            for(let s of super_all_slots){
-                if(new_slots.find(x=>x.tag==s.tag)) continue;
-                new_slots.push(s);
+            // console.log("setAvailableBlocks all_slots", all_slots)
+        
+            let new_all_slots = [];
+            for(let s of all_slots){
+                if(new_all_slots.find(x=>(x.componentOptions?x.componentOptions?.tag:x.asyncMeta?.tag)==(s.componentOptions?s.componentOptions?.tag:s.asyncMeta?.tag))) continue;
+                new_all_slots.push(s);
             }
 
-            console.log("setAvailableBlocks new_slots", new_slots)
+            // console.log("setAvailableBlocks new_all_slots", new_all_slots)
 
             this.availableBlocks = [];
-            if(slots){
-                for(let slot of slots){
+            if(new_all_slots){
+                for(let slot of new_all_slots){
                     if(errorTypes.includes(slot.tag)) continue;
                     let attrs = slot.data?slot.data.attrs:slot.asyncMeta.data.attrs;
                     let tag = slot.componentOptions?slot.componentOptions.tag:slot.asyncMeta.tag;
+                    let active = !!slots.find(x=>tag==(x.componentOptions?x.componentOptions?.tag:x.asyncMeta?.tag))
+                    if(all_available) active=true;
                     this.availableBlocks.push({
                         name: attrs.name,
                         proto_id: attrs.proto_id,
-                        tag
+                        tag,
+                        active
                     })
                 }
             }
+
+            // console.log(this.$el, this.availableBlocks.filter(x=>x.active).map(x=>x.tag).join('-'))
+            if(this.draggableClasses.length==0)this.draggableClasses = this.availableBlocks.filter(x=>x.active).map(x=>'slot-draggable-'+x.tag);
+            // console.log("this.availableBlocks", this.availableBlocks)
+            this.$forceUpdate()
         },
         unselectInBlockEditor(user_event=false){
             for(let b of this.editor){
@@ -364,14 +381,12 @@ export default {
         },
         registerEditor(editor){
             this.registeredEditors.push(editor);
-            console.log('RegisterEditor', this.registeredEditors)
+            console.log('RegisterEditor', this.registeredEditors);
         }
 	},
     mounted(){
         if(!window.tempDragDataBlockEditor) window.tempDragDataBlockEditor = {};
         this.editor_group = this.group.replace(/rnd/g, Math.floor(Math.random()*99999999).toString());
-
-        this.setAvailableBlocks(this.$slots.default);
 
         if(this.layout == "full"){
             this.layout_options.menu = true;
@@ -387,6 +402,8 @@ export default {
         this.loaded = true;
         for(let d of this.setDataQuery) this._setData(d);
         this.mainEditor().registerEditor(this);
+
+        this.setAvailableBlocks(this.$slots.default);
     }
 }
 </script>
@@ -407,6 +424,10 @@ export default {
             margin: 5px;
             background: #f3f3f3;
             border-radius: 5px;
+            opacity: 0.5;
+            &.active{
+                opacity: 1;
+            }
             &:hover{
                 background: #d8d8d8;
             }
