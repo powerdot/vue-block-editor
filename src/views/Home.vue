@@ -9,6 +9,7 @@
 			<templateError>
 				Упс! Блок не принадлежит этому элементу!
 			</templateError>
+			<!-- leftBottomPanel -->
 		</block-editor>
 	</div>
 </template>
@@ -51,43 +52,7 @@ let newData = [
                                 "id": "_62350156_insider",
                                 "data": {
                                     "title": "ЭТО ИНСАЙДИНА ОГО",
-                                    "block_editor": [
-                                        {
-                                            "name": "Инсайдина",
-                                            "proto_id": "_rnd_insider",
-                                            "tag": "inside",
-                                            "active": true,
-                                            "id": "_84811172_insider",
-                                            "data": {
-                                                "title": "ЭТО ИНСАЙДИНА ОГО",
-                                                "block_editor": [
-                                                    {
-                                                        "name": "Инсайдина",
-                                                        "proto_id": "_rnd_insider",
-                                                        "tag": "inside",
-                                                        "active": true,
-                                                        "id": "_43036527_insider",
-                                                        "data": {
-                                                            "title": "ЭТО ИНСАЙДИНА ОГО",
-                                                            "block_editor": [
-                                                                {
-                                                                    "name": "Инсайдина",
-                                                                    "proto_id": "_rnd_insider",
-                                                                    "tag": "inside",
-                                                                    "active": true,
-                                                                    "id": "_91961524_insider",
-                                                                    "data": {
-                                                                        "title": "ЭТО ИНСАЙДИНА ОГО",
-                                                                        "block_editor": []
-                                                                    }
-                                                                }
-                                                            ]
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    ]
+                                    "block_editor": []
                                 }
                             }
                         ]

@@ -108,12 +108,12 @@ export default {
                 return new Error(`SlotRender: missing method setData()  in ${this.tag} template.`)
             }
         },
-        unselectAllChildren(){
+        unselectAllChildren(user_event, from_main_editor){
             if(this.$children.length == 0) return;
             if(this.$children[0]){
                 for(let element of this.$children[0].$children[0].$children){
                     if(element.$vnode.componentOptions.Ctor.extendOptions.name == 'block-editor'){
-                        element.unselectAllChildren();
+                        element.unselectAllChildren(user_event, from_main_editor);
                     }
                 }
             }

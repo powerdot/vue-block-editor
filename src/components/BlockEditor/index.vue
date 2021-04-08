@@ -16,7 +16,7 @@
             </draggable>
             <button @click='Compile'>Compile!</button>
 		</div>
-		<div :class="{editor: true, [layout]: true}" v-if="layout_options.editor" @click="unselectInBlockEditor(true)">
+		<div :class="{editor: true, [layout]: true}" v-if="layout_options.editor" @click="unselectInBlockEditor(false, true, true)">
             <draggable 
                 :class="['dragArea', 'list-group', ...draggableClasses]"
                 v-model="editor" 
@@ -31,7 +31,7 @@
                 :move="moveBlock"
             >
                 <div :class='["item", "slot-draggable-"+block.tag]' v-for='(block, block_i) of editor' :key="block.id" :tag="block.tag" :block_id="block.id" @click="SlotClick(block, $event)">
-                    <add-block :newBlockIndex="block_i" :availableBlocks="availableBlocks" @addBlock="modalMenuAddBlock"></add-block>
+                    <add-block :newBlockIndex="block_i" :availableBlocks="availableBlocks" @addBlock="modalMenuAddBlock" :copyBuffer="mainEditor().copyBuffer" @pasteBlocks="pasteBlocks" :editorTags="activeTags"></add-block>
                     <div :class="{block:true, selected: block.selected}" :id='block.id'>
                         <SlotRender :ref="block.id" :tag="block.tag" :block_id="block.id" @slotMounted="slotMounted">
                             <slot></slot>
@@ -49,7 +49,7 @@
                         </svg>
                     </div>
                 </div>
-                <add-block :availableBlocks="availableBlocks" @addBlock="modalMenuAddBlock" :first="editor.length==0"></add-block>
+                <add-block :availableBlocks="availableBlocks" @addBlock="modalMenuAddBlock" :first="editor.length==0" :copyBuffer="mainEditor().copyBuffer" @pasteBlocks="pasteBlocks" :editorTags="activeTags"></add-block>
             </draggable>
             <!-- <div style='position: absolute; font-size: 8pt;'>{{editor}}</div> -->
 		</div>
@@ -115,11 +115,14 @@ export default {
             selectedBlock: null,
             _cachedMainEditor: null,
             selectBlockAfterMount: null,
+            setDataToBlockAfterMount: null,
             copyBuffer: [],
             registeredEditors: [],
             errorTypes,
             loadedSlots: 0,
-            draggableClasses: []
+            draggableClasses: [],
+            activeTags: [],
+            isThisMainEditor: null
 		}
 	},
 	methods: {
@@ -127,7 +130,6 @@ export default {
             let to_classes = [...e.to.classList];
             let el_class = [...e.dragged.classList].filter(x=>x.includes('slot-draggable'))[0]
             let can_place = to_classes.includes(el_class);
-            // console.log(can_place, e)
             return can_place;
         },
         modalMenuAddBlock(block, block_i){
@@ -142,9 +144,14 @@ export default {
                 if(this.selectBlockAfterMount.id == slot_data.block_id){
                     this.SlotClick(this.selectBlockAfterMount);
                 }
+                this.selectBlockAfterMount = null;
             }
-            this.mainEditor().setAvailableBlocks(this.mainEditor().$slots.default);
-            this.selectBlockAfterMount = null;
+            if(this.setDataToBlockAfterMount){
+                if(this.setDataToBlockAfterMount.id == slot_data.block_id){
+                    this.$refs[slot_data.block_id][0].setData(this.setDataToBlockAfterMount.data);
+                }
+                this.setDataToBlockAfterMount = null;
+            }
         },
 		addBlockToEditor(block, block_i){
 			let block_proto = JSON.parse(JSON.stringify(block));
@@ -165,21 +172,37 @@ export default {
         },
         copyBlock(e,block){
             let copied_block_structure = JSON.parse(JSON.stringify(this.editor)).find(x=>x.id==block.id);
-            console.log("asdadasd", copied_block_structure)
             delete copied_block_structure.selected;
             delete copied_block_structure.id;
             copied_block_structure.data = this.$refs[block.id][0].getData();
             this.mainEditor().addToCopyBuffer(copied_block_structure)
         },
+        addToCopyBuffer(copied_block){
+            // console.log('copied_block', copied_block)
+            this.copyBuffer = [];
+            this.copyBuffer.push(copied_block);
+            this.$forceUpdate();
+            console.log('copyBuffer', this.copyBuffer)
+        },
+        pasteBlocks(copyBuffer, newBlockIndex){
+            console.log('pasteBlocks', this.$el, copyBuffer, newBlockIndex)
+            let index_correction = 0;
+            for(let b of copyBuffer){
+                let added;
+                if(typeof newBlockIndex != 'undefined'){
+                    added = this.addBlockToEditor(b, newBlockIndex+index_correction);
+                }else{
+                    added = this.addBlockToEditor(b);
+                }
+                this.selectBlockAfterMount = added;
+                this.setDataToBlockAfterMount = {...added, data: b.data};
+                index_correction++;
+            }
+        },
         cloneBlockProto(block){
             let block_proto = JSON.parse(JSON.stringify(block));
             block_proto.id = this.parseID(block_proto);
             return block_proto;
-        },
-        addToCopyBuffer(copied_block){
-            console.log('copied_block', copied_block)
-            this.copyBuffer.push(copied_block);
-            console.log('copyBuffer', this.copyBuffer)
         },
         parseID(block){
             if(!block.proto_id) return Math.floor(Math.random()*99999999).toString();
@@ -258,10 +281,16 @@ export default {
                 }
             }
             let block_to_select = this.editor.find(x=>x.id==block_id);
+            block_to_select.selected = false;
             if(block_to_select) this.SlotClick(block_to_select);
         },
         BlockDragChoosed(e){ },
-        SlotClick(block, event){
+        SlotClick(block, event, force){
+            if(block.selected) {
+                if(event) event.stopPropagation();
+                return;
+            }
+            // console.log("SLOT CLICK", block.tag)
             this.mainEditor().setSelectedBlock(null);
             this.$nextTick(()=>{
                 this.mainEditor().setSelectedBlock({ref: this.$refs[block.id],...block});
@@ -270,6 +299,7 @@ export default {
                 
                 // Получение доступных слотов для работы в editor-окружении с этим слотом
                 // поиск внизу
+                // TODO работает ли он во всех случаях? Сейчас он ищет первый дочерний блок, который должен быть editor
                 let blocks_editors_inside_slot = (this.$refs[block.id][0].$children[0].$children[0].$children||[]).filter(x=>x.$vnode.componentOptions.Ctor.extendOptions.name=='block-editor');
                 let slots_inside_slot = [];
                 for(let editor of blocks_editors_inside_slot) slots_inside_slot.push(...editor.$slots.default.filter(x=>!errorTypes.includes(x.tag)))
@@ -279,7 +309,7 @@ export default {
                     let current_parent = this.$refs[block.id][0];
                     for(;;){
                         if(!current_parent.$vnode) break;
-                        console.log(block.tag,current_parent.$vnode.componentOptions.Ctor.extendOptions.name, current_parent.$vnode)
+                        // console.log(block.tag,current_parent.$vnode.componentOptions.Ctor.extendOptions.name, current_parent.$vnode)
                         if(current_parent.$vnode.componentOptions.Ctor.extendOptions.name == 'block-editor'){
                             closest_parent_block_editor = current_parent;
                             break;
@@ -307,19 +337,19 @@ export default {
             })
             if(event) event.stopPropagation();
         },
-        // TODO: too much calls? Check it on console
-        setAvailableBlocks(slots=[], all_available=false){
-            // console.log("setAvailableBlocks slots", slots)
+        setAvailableBlocks(slots=[]){
+            if(!this.isThisEditorIsMain() && this.draggableClasses.length!=0) return;
+            // console.groupCollapsed('setAvailableBlocks', this.isThisEditorIsMain()?"in main editor":"in child editor", this.$el, slots);
+            // console.trace();
+            // console.groupEnd();
+
             let all_slots = this.mainEditor().registeredEditors.map(x=>x.$slots.default).flat().filter(x=>!errorTypes.includes(x.tag));
-            // console.log("setAvailableBlocks all_slots", all_slots)
         
             let new_all_slots = [];
             for(let s of all_slots){
                 if(new_all_slots.find(x=>(x.componentOptions?x.componentOptions?.tag:x.asyncMeta?.tag)==(s.componentOptions?s.componentOptions?.tag:s.asyncMeta?.tag))) continue;
                 new_all_slots.push(s);
             }
-
-            // console.log("setAvailableBlocks new_all_slots", new_all_slots)
 
             this.availableBlocks = [];
             if(new_all_slots){
@@ -328,7 +358,6 @@ export default {
                     let attrs = slot.data?slot.data.attrs:slot.asyncMeta.data.attrs;
                     let tag = slot.componentOptions?slot.componentOptions.tag:slot.asyncMeta.tag;
                     let active = !!slots.find(x=>tag==(x.componentOptions?x.componentOptions?.tag:x.asyncMeta?.tag))
-                    if(all_available) active=true;
                     this.availableBlocks.push({
                         name: attrs.name,
                         proto_id: attrs.proto_id,
@@ -339,9 +368,14 @@ export default {
             }
 
             if(this.draggableClasses.length==0) this.draggableClasses = this.availableBlocks.filter(x=>x.active).map(x=>'slot-draggable-'+x.tag);
+            if(this.activeTags.length==0) this.activeTags = this.availableBlocks.filter(x=>x.active).map(x=>x.tag);
             this.$forceUpdate()
         },
-        unselectInBlockEditor(user_event=false){
+        unselectInBlockEditor(user_event=false, from_main_editor=false, force_to_down=false){
+            // console.groupCollapsed("UNSELECT", user_event?"with next select":"without next select", from_main_editor?"from_main_editor":"from_child_editor", this.$el);
+            // console.trace();
+            // console.groupEnd();
+
             for(let b of this.editor){
                 if(b.selected){
                     // console.log("unselecting", b.id)
@@ -349,10 +383,12 @@ export default {
                     // hide old prop pops
                 }
             }
-            this.setAvailableBlocks(this.$slots.default)
             this.$forceUpdate();
-            if(user_event){
-                this.mainEditor().unselectAllChildren();
+            if((!user_event && from_main_editor)){
+                this.setAvailableBlocks(this.$slots.default)
+            }
+            if(user_event || force_to_down){
+                this.mainEditor().unselectAllChildren(user_event, this.isThisEditorIsMain());
             }
         },
         mainEditor(){
@@ -373,16 +409,26 @@ export default {
         setSelectedBlock(block){
             this.selectedBlock = block;
         },
-        unselectAllChildren(){
-            this.unselectInBlockEditor();
-            for(let block of this.editor) this.$refs[block.id][0].unselectAllChildren();
+        unselectAllChildren(user_event=false, from_main_editor){
+            // console.log("- unselectAllChildren", user_event, from_main_editor)
+            if(from_main_editor != this.isThisEditorIsMain()) this.unselectInBlockEditor(false, from_main_editor);
+            for(let block of this.editor) this.$refs[block.id][0].unselectAllChildren(false, true);
+            this.$forceUpdate();
         },
         registerEditor(editor){
             this.registeredEditors.push(editor);
-            console.log('RegisterEditor', this.registeredEditors);
+            // console.log('RegisterEditor', this.registeredEditors);
+        },
+        isThisEditorIsMain(){
+            if(this.isThisMainEditor != null) return this.isThisMainEditor;
+            let is = false;
+            if(this._uid == this.mainEditor()._uid) is = true;
+            this.isThisMainEditor = is;
+            return is;
         }
 	},
     mounted(){
+        // console.log("EDITOR MOUNTED uid", this._uid, this.isThisEditorIsMain())
         if(!window.tempDragDataBlockEditor) window.tempDragDataBlockEditor = {};
         this.editor_group = this.group.replace(/rnd/g, Math.floor(Math.random()*99999999).toString());
 
@@ -400,8 +446,8 @@ export default {
         this.loaded = true;
         for(let d of this.setDataQuery) this._setData(d);
         this.mainEditor().registerEditor(this);
-
         this.setAvailableBlocks(this.$slots.default);
+        if(!this.isThisEditorIsMain()) this.mainEditor().setAvailableBlocks(this.mainEditor().$slots.default);
     }
 }
 </script>

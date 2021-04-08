@@ -7,7 +7,12 @@
                 <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
             </svg>
             <div class="blockMenuModal">
-                <div class="item block" v-for="menuBlock in availableBlocks" :key="menuBlock.tag+'_menuModalBlock'" @click="modalMenuAddBlock($event, menuBlock)">
+                <template v-if='!!editorTags.find(x=>copyBuffer.map(y=>y.tag).includes(x))'>
+                    <div class="item block" @click="paste">
+                        paste
+                    </div>
+                </template>
+                <div class="item block" v-for="menuBlock in availableBlocks.filter(x=>x.active)" :key="menuBlock.tag+'_menuModalBlock'" @click="modalMenuAddBlock($event, menuBlock)">
                     {{menuBlock.name}}
                 </div>
             </div>
@@ -31,6 +36,14 @@ export default {
         first: {
             type: Boolean,
             default: false
+        },
+        copyBuffer: {
+            type: Array,
+            default: ()=>([])
+        },
+        editorTags: {
+            type: Array,
+            default: ()=>([])
         }
     },
 	data: ()=>{
@@ -41,6 +54,11 @@ export default {
 	methods: {
 		modalMenuAddBlock(e, block){
             this.$emit('addBlock', block, this.newBlockIndex);
+            e.stopPropagation();
+            e.preventDefault();
+        },
+        paste(e, block){
+            this.$emit('pasteBlocks', this.copyBuffer, this.newBlockIndex);
             e.stopPropagation();
             e.preventDefault();
         }
