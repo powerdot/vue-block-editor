@@ -4,13 +4,13 @@
             <draggable
                 class='dragArea list-group'
                 :list="[block]"
-                :draggable="`.slot-draggable-${block.tag}`"
+                draggable=".item"
                 :group="{ name: editor_group, pull: 'clone', put: false }"
                 :clone="cloneBlockProto"
                 :move="moveBlock"
                 v-for="block in availableBlocks" :key="block.tag"
             >
-                <div :class="{block:true, active: block.active, [`slot-draggable-${block.tag}`]: true}">
+                <div :class="{block:true, active: block.active, [`slot-draggable-${block.tag}`]: true, item: true}">
                     {{block.name}}
                 </div>
             </draggable>
@@ -338,9 +338,7 @@ export default {
                 }
             }
 
-            // console.log(this.$el, this.availableBlocks.filter(x=>x.active).map(x=>x.tag).join('-'))
-            if(this.draggableClasses.length==0)this.draggableClasses = this.availableBlocks.filter(x=>x.active).map(x=>'slot-draggable-'+x.tag);
-            // console.log("this.availableBlocks", this.availableBlocks)
+            if(this.draggableClasses.length==0) this.draggableClasses = this.availableBlocks.filter(x=>x.active).map(x=>'slot-draggable-'+x.tag);
             this.$forceUpdate()
         },
         unselectInBlockEditor(user_event=false){
