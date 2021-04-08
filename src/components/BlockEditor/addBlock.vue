@@ -12,7 +12,7 @@
                         paste
                     </div>
                 </template>
-                <div class="item block" v-for="menuBlock in availableBlocks.filter(x=>x.active)" :key="menuBlock.tag+'_menuModalBlock'" @click="modalMenuAddBlock($event, menuBlock)">
+                <div class="item block" v-for="menuBlock in availableBlocks.filter(x=> editorTags.includes(x.tag) )" :key="menuBlock.tag+'_menuModalBlock'" @click="modalMenuAddBlock($event, menuBlock)">
                     {{menuBlock.name}}
                 </div>
             </div>

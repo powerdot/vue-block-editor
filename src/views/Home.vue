@@ -1,7 +1,7 @@
 <template>
 	<div class="container">
 		<!-- <button @click='load'>load</button> -->
-		<block-editor ref="blockEditor" @Compiled="BlocksCompiled" group='editor_group'>
+		<block-editor ref="blockEditor" @Compiled="BlocksCompiled" @Imported="BlocksImported" group='editor_group' :values="newData">
 			<textik name="Текстичек"/>
 			<linka name="Ссылочка" proto_id="_link_rnd"/>
 			<selectbox name="Селекбоксина" proto_id="_rnd_selectbox"/>
@@ -124,31 +124,23 @@ export default {
 		inside: ()=> import("../components/BlockEditor/blocks/inside")
 	},
 	data: ()=>{
-		return {}
+		return {
+			newData: []//newData
+		}
 	},
 	methods: {
 		BlocksCompiled(data){
 			console.log("BlocksCompiled", data);
 		},
+		BlocksImported(){
+			console.log("Blocks Imported!")
+		},
 		load(){
-			this.$refs.blockEditor.setData(newData);
+			// this.$refs.blockEditor.setData(newData);
 		}
 	},
     mounted(){
-		// console.log("home mnt this", this)
-		this.$refs.blockEditor.setData(newData);
-
-		// setImmediate(()=>{
-		// 	this.$refs.blockEditor.setData(newData);
-		// })
-
-		// setTimeout(()=>{
-		// 	this.$refs.blockEditor.setData(newData);
-		// }, 100)
-
-		// this.$nextTick(()=>{
-		// 	this.$refs.blockEditor.setData(newData);
-		// });
+		// this.$refs.blockEditor.importData(newData);
 	}
 }
 </script>

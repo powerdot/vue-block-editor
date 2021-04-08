@@ -16,7 +16,22 @@
             </draggable>
             <button @click='Compile'>Compile!</button>
 		</div>
-		<div :class="{editor: true, [layout]: true}" v-if="layout_options.editor" @click="unselectInBlockEditor(false, true, true)">
+		<div :class="{editor: true, [layout]: true, mainEditor: isThisMainEditor}" v-if="layout_options.editor" @click="unselectInBlockEditor(false, true, true)">
+            <template v-if='historyShow'>
+                <div class='history'>
+                    <button class='history_button undo' @click='HistoryUndo'>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-return-left" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5z"/>
+                        </svg>
+                    </button>
+                    <button class='history_button redo' @click='HistoryRedo'>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-return-right" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1.5 1.5A.5.5 0 0 0 1 2v4.8a2.5 2.5 0 0 0 2.5 2.5h9.793l-3.347 3.346a.5.5 0 0 0 .708.708l4.2-4.2a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 8.3H3.5A1.5 1.5 0 0 1 2 6.8V2a.5.5 0 0 0-.5-.5z"/>
+                        </svg>
+                    </button>
+                    <span style="margin-left: 10px; font-size: 10pt; position: relative; top: -2px; opacity: 0.5;">Step: {{historyStep==null?"last":historyStep}}/{{historyCompiled.length}}</span>
+                </div>
+            </template>
             <draggable 
                 :class="['dragArea', 'list-group', ...draggableClasses]"
                 v-model="editor" 
@@ -25,7 +40,6 @@
                 @start="BlockDragStart"
                 @end="BlockDragEnd"
                 @add="BlockDragAdded"
-                @choose="BlockDragChoosed"
                 ghost-class="ghost"
                 :touchStartThreshold="20"
                 :move="moveBlock"
@@ -72,6 +86,24 @@
 
 <script>
 
+function countSlotsFromProtoObject(data){ 
+    let counter = 0;
+    if(typeof data == 'object'){
+        if(Array.isArray(data)) {
+            data.map(el => counter += countSlotsFromProtoObject(el))
+        }else{
+            for(let key of Object.keys(data)){
+                let el = data[key];
+                if(key=='block_editor' || key=='data'){
+                    if(key=='block_editor') counter++;
+                    counter += countSlotsFromProtoObject(el);
+                }
+            }
+        }
+    }
+    return counter
+}
+
 let errorTypes = ['propertyEditorTemplateError', 'templateError'];
 
 import SlotRender from './SlotRender.js';
@@ -98,12 +130,23 @@ export default {
             type: String,
             default: 'editor_rnd'
         },
+        historyLength: {
+            type: Number,
+            default: 14
+        },
+
+        values: {
+            type: Array,
+            default: ()=>([])
+        }
     },
 	data: ()=>{
 		return {
 			availableBlocks: [],
 			editor: [],
-            loaded: false,
+            slotsMounted: 0,
+            slotsMustBeMounted: 0,
+            slotsImportCount: 0,
             setDataQuery: [],
             layout_options: {
                 menu: false,
@@ -122,7 +165,10 @@ export default {
             loadedSlots: 0,
             draggableClasses: [],
             activeTags: [],
-            isThisMainEditor: null
+            isThisMainEditor: null,
+            historyShow: false,
+            historyCompiled: [],
+            historyStep: null
 		}
 	},
 	methods: {
@@ -133,12 +179,12 @@ export default {
             return can_place;
         },
         modalMenuAddBlock(block, block_i){
-            let new_block = this.addBlockToEditor(block, block_i);
+            let new_block = this.addBlockToEditor(block, block_i, true);
             this.selectBlockAfterMount.push(new_block);
             //
         },
         slotMounted(slot_data){
-            console.log("slotMounted:", slot_data)
+            console.log(`slotMounted to: ${this.isThisEditorIsMain()?'main':'child'}`, slot_data)
             for(let block of this.selectBlockAfterMount){
                 if(block.id == slot_data.block_id){
                     this.SlotClick(block);
@@ -151,8 +197,17 @@ export default {
                     this.setDataToBlockAfterMount = this.setDataToBlockAfterMount.filter(x=>x.id!=block.id);
                 }
             }
+            if(!this.isThisEditorIsMain()){
+                this.mainEditor().slotMounted(slot_data);
+            }else{
+                this.slotsMounted++;
+                console.log("slots mounted:", this.slotsMounted+"/"+this.slotsMustBeMounted);
+                if(this.slotsMustBeMounted == this.slotsMounted){
+                    this.Imported();
+                }
+            }
         },
-		addBlockToEditor(block, block_i){
+		addBlockToEditor(block, block_i, is_user_event=false){
 			let block_proto = JSON.parse(JSON.stringify(block));
             block_proto.id = block_proto.id||this.parseID(block_proto);
             delete block_proto.data;
@@ -162,11 +217,14 @@ export default {
             }else{
                 this.editor.push(block_proto);
             }
+            this.mainEditor().editorChanged(is_user_event); 
             return block_proto;
 		},
         removeBlockFromEditor(e,block){
             this.editor = this.editor.filter(x=>x.id!=block.id);
             this.mainEditor().setSelectedBlock(null);
+            this.mainEditor().unselectInBlockEditor(false, true, true);
+            this.mainEditor().editorChanged(true);
             e.stopPropagation();
         },
         copyBlock(e,block){
@@ -189,9 +247,9 @@ export default {
             for(let b of copyBuffer){
                 let added;
                 if(typeof newBlockIndex != 'undefined'){
-                    added = this.addBlockToEditor(b, newBlockIndex+index_correction);
+                    added = this.addBlockToEditor(b, newBlockIndex+index_correction, true);
                 }else{
-                    added = this.addBlockToEditor(b);
+                    added = this.addBlockToEditor(b, undefined, true);
                 }
                 this.selectBlockAfterMount.push(added);
                 this.setDataToBlockAfterMount.push({...added, data: b.data});
@@ -207,8 +265,6 @@ export default {
             if(!block.proto_id) return Math.floor(Math.random()*99999999).toString();
             return block.proto_id.replace(/rnd/g, Math.floor(Math.random()*99999999).toString());
         },
-
-		CustomBlockClick(e){ },
         Compile(do_emit=true){
             let blocks = JSON.parse(JSON.stringify(this.editor));
             for(let b of blocks){
@@ -220,29 +276,34 @@ export default {
             return blocks;
         },
         setData(d){
-            if(!this.loaded) return this.setDataQuery.push(d);
             this._setData(d);
         },
         _setData(d){
+            console.log("_setData data:", d)
             this.editor = [];
-            // console.log("main setData", d);
-
             for(let block of d){
-                if(!this.availableBlocks.find(x=>x.tag)){
-                    new Error(`setData(): Tag ${block.tag} not found in list of initiated tags inside <block-editor>.`)
-                    continue;
-                }
-                // console.log("adding", block)
+                console.log("_setData block", block);
+                console.log("_setData addBlockToEditor", block)
                 this.addBlockToEditor(block);
             }
-
             this.$nextTick(()=>{
                 for(let block of d){
                     if(!this.editor.find(x=>x.id==block.id)) continue;
-                    // console.log("index setting data", block, this.$refs[block.id][0]);
                     this.$refs[block.id][0].setData(block.data);
                 }
             })
+        },
+        importData(d){
+            console.log("import data:", d)
+            this.slotsMounted = 0;
+            // Alex's code
+            this.slotsMustBeMounted = countSlotsFromProtoObject(d) + d.length;
+            this._setData(d);
+        },
+        Imported(){
+            this.$emit('Imported');
+            this.historyCompiled.push(this.Compile(false));
+            // console.log('all slots Imported');
         },
         BlockDragStart(e){
             let block_id = e.item.children[1].id;
@@ -253,14 +314,17 @@ export default {
             // console.log("BlockDragStart block_id",block_id)
             // console.log("BlockDragStart block", block);
             // console.log("BlockDragStart data", data);
-            window.tempDragDataBlockEditor[block_id] = data;
+            window[`tempDragDataBlockEditor_${this.mainEditor()._uid}`][block_id] = data;
             
         },
         BlockDragEnd(e){
             let children = e.to.children[e.newDraggableIndex].children[1];
             let block_id = children.id;
             let block_to_select = this.editor.find(x=>x.id==block_id);
-            if(block_to_select) this.SlotClick(block_to_select)
+            if(block_to_select) {
+                this.SlotClick(block_to_select);
+                this.mainEditor().editorChanged(true);
+            }
         },
         BlockDragAdded(e){
             // console.log("BlockDragAdded event",e)
@@ -269,21 +333,21 @@ export default {
             // console.log("BlockDragAdded child", children);
             let block_id = children.id;
             // console.log("BlockDragAdded block_id", block_id)
-            if(window.tempDragDataBlockEditor){
-                let data = window.tempDragDataBlockEditor[block_id];
+            if(window[`tempDragDataBlockEditor_${this.mainEditor()._uid}`]){
+                let data = window[`tempDragDataBlockEditor_${this.mainEditor()._uid}`][block_id];
                 // console.log("BlockDragAdded data", data);
                 if(data){
                     let block = this.$refs[block_id][0];
                     // console.log("BlockDragAdded block", block);
                     block.setData(data);
-                    window.tempDragDataBlockEditor[block_id] = {};
+                    window[`tempDragDataBlockEditor_${this.mainEditor()._uid}`][block_id] = {};
                 }
             }
             let block_to_select = this.editor.find(x=>x.id==block_id);
             block_to_select.selected = false;
             if(block_to_select) this.SlotClick(block_to_select);
+            this.mainEditor().editorChanged(true);
         },
-        BlockDragChoosed(e){ },
         SlotClick(block, event, force){
             if(block.selected) {
                 if(event) event.stopPropagation();
@@ -317,7 +381,7 @@ export default {
                     }
                     if(closest_parent_block_editor){
                         if(closest_parent_block_editor.$slots?.default){
-                            let slots = closest_parent_block_editor.$slots.default.filter(x=>!errorTypes.includes(x.tag));
+                            let slots = closest_parent_block_editor.$slots.default.filter(x=>!errorTypes.includes((x.componentOptions?x.componentOptions?.tag:x.asyncMeta?.tag)));
                             slots_inside_slot.push(...slots);
                         }
                     }
@@ -328,9 +392,10 @@ export default {
                 if(slots_inside_slot.length != 0) {
                     let new_slots = [];
                     for(let s of slots_inside_slot){
-                        if(new_slots.find(x=>x.tag==s.tag)) continue;
+                        if(new_slots.find(x=>(x.componentOptions?x.componentOptions?.tag:x.asyncMeta?.tag)==(s.componentOptions?s.componentOptions?.tag:s.asyncMeta?.tag))) continue;
                         new_slots.push(s);
                     }
+                    console.log("new_slots:", new_slots)
                     this.mainEditor().setAvailableBlocks(new_slots);
                 }
             })
@@ -341,9 +406,8 @@ export default {
             // console.groupCollapsed('setAvailableBlocks', this.isThisEditorIsMain()?"in main editor":"in child editor", this.$el, slots);
             // console.trace();
             // console.groupEnd();
-
-            let all_slots = this.mainEditor().registeredEditors.map(x=>x.$slots.default).flat().filter(x=>!errorTypes.includes(x.tag));
         
+            let all_slots = this.mainEditor().registeredEditors.map(x=>x.$slots.default).flat().filter(x=>!errorTypes.includes(x.tag));
             let new_all_slots = [];
             for(let s of all_slots){
                 if(new_all_slots.find(x=>(x.componentOptions?x.componentOptions?.tag:x.asyncMeta?.tag)==(s.componentOptions?s.componentOptions?.tag:s.asyncMeta?.tag))) continue;
@@ -366,8 +430,9 @@ export default {
                 }
             }
 
-            if(this.draggableClasses.length==0) this.draggableClasses = this.availableBlocks.filter(x=>x.active).map(x=>'slot-draggable-'+x.tag);
-            if(this.activeTags.length==0) this.activeTags = this.availableBlocks.filter(x=>x.active).map(x=>x.tag);
+            this.draggableClasses = this.availableBlocks.filter(x=>x.active).map(x=>'slot-draggable-'+x.tag);
+            this.activeTags = this.availableBlocks.filter(x=>x.active).map(x=>x.tag);
+
             this.$forceUpdate()
         },
         unselectInBlockEditor(user_event=false, from_main_editor=false, force_to_down=false){
@@ -411,7 +476,10 @@ export default {
         unselectAllChildren(user_event=false, from_main_editor){
             // console.log("- unselectAllChildren", user_event, from_main_editor)
             if(from_main_editor != this.isThisEditorIsMain()) this.unselectInBlockEditor(false, from_main_editor);
-            for(let block of this.editor) this.$refs[block.id][0].unselectAllChildren(false, true);
+            for(let block of this.editor) {
+                if(!this.$refs[block.id]) continue;
+                this.$refs[block.id][0].unselectAllChildren(false, true);
+            }
             this.$forceUpdate();
         },
         registerEditor(editor){
@@ -424,11 +492,48 @@ export default {
             if(this._uid == this.mainEditor()._uid) is = true;
             this.isThisMainEditor = is;
             return is;
+        },
+        editorChanged(is_user_event){
+            if(!is_user_event) return;
+            this.$nextTick(()=>{
+                this.$emit('Changed');
+                // console.time("compiling")
+                // let compiled = this.Compile(true);
+                // console.timeEnd("compiling")
+                this.historyCompiled.push(this.Compile(false));
+                this.historyCompiled = this.historyCompiled.slice(-this.historyLength);
+                this.historyStep = null;
+                // console.log("editorChanged!", this.historyCompiled)
+                console.log("editorChanged!", this.historyCompiled)
+            })
+        },
+        HistoryUndo(){
+            if(this.historyStep == null){
+                this.historyStep = this.historyCompiled.length - 2;
+            }else{
+                this.historyStep = this.historyStep - 1;
+            }
+            if(this.historyStep<0) return;
+            this._setData(this.historyCompiled[this.historyStep]);
+        },
+        HistoryRedo(){
+            if(this.historyStep == null) return; 
+            this.historyStep = this.historyCompiled.length - 1;
+            if(this.historyStep == null){
+                this._setData(this.historyCompiled[this.historyCompiled.slice(-1)]);
+            }else{
+                this._setData(this.historyCompiled[this.historyStep]);
+            }
+            this.historyStep = null;
         }
 	},
     mounted(){
         // console.log("EDITOR MOUNTED uid", this._uid, this.isThisEditorIsMain())
-        if(!window.tempDragDataBlockEditor) window.tempDragDataBlockEditor = {};
+        if(this.isThisEditorIsMain()){
+            if(!window[`tempDragDataBlockEditor_${this._uid}`]) window[`tempDragDataBlockEditor_${this._uid}`] = {};
+            this.historyShow = true;
+        }
+
         this.editor_group = this.group.replace(/rnd/g, Math.floor(Math.random()*99999999).toString());
 
         if(this.layout == "full"){
@@ -439,11 +544,18 @@ export default {
             this.layout_options.editor = true;
         }
 
+        console.log('this values', this.values)
+
+        if(this.values.length != 0){
+            this.importData(this.values);
+        }else{
+            this.historyCompiled.push([]);
+        }
+
         // console.log("main availableBlocks length:", this.availableBlocks.length);
         // console.log("main mnt this", this)
-
-        this.loaded = true;
         for(let d of this.setDataQuery) this._setData(d);
+        // if(last_data) this.historyCompiled.push(last_data);
         this.mainEditor().registerEditor(this);
         this.setAvailableBlocks(this.$slots.default);
         if(!this.isThisEditorIsMain()) this.mainEditor().setAvailableBlocks(this.mainEditor().$slots.default);
@@ -481,6 +593,21 @@ export default {
         background #eee;
         height 100vh;
         white-space pre-wrap;
+        &.mainEditor{
+            padding: 10px;
+        }
+        .history{
+            .history_button{
+                border: none;
+                background: rgba(0,0,0,0);
+                outline: none;
+                opacity: 0.7;
+                cursor: pointer;
+                &:hover{
+                    opacity: 1;
+                }
+            }
+        }
         .item{
             position: relative;
             .removeBlock{
