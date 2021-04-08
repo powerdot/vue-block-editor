@@ -114,8 +114,8 @@ export default {
             tempDragData: {},
             selectedBlock: null,
             _cachedMainEditor: null,
-            selectBlockAfterMount: null,
-            setDataToBlockAfterMount: null,
+            selectBlockAfterMount: [],
+            setDataToBlockAfterMount: [],
             copyBuffer: [],
             registeredEditors: [],
             errorTypes,
@@ -134,23 +134,22 @@ export default {
         },
         modalMenuAddBlock(block, block_i){
             let new_block = this.addBlockToEditor(block, block_i);
-            this.selectBlockAfterMount = new_block;
-            // console.log("modalMenu block selected", {ref: this.$refs[block.id],...block}, new_block)
+            this.selectBlockAfterMount.push(new_block);
             //
         },
         slotMounted(slot_data){
             console.log("slotMounted:", slot_data)
-            if(this.selectBlockAfterMount){
-                if(this.selectBlockAfterMount.id == slot_data.block_id){
-                    this.SlotClick(this.selectBlockAfterMount);
+            for(let block of this.selectBlockAfterMount){
+                if(block.id == slot_data.block_id){
+                    this.SlotClick(block);
+                    this.selectBlockAfterMount = this.selectBlockAfterMount.filter(x=>x.id!=block.id);
                 }
-                this.selectBlockAfterMount = null;
             }
-            if(this.setDataToBlockAfterMount){
-                if(this.setDataToBlockAfterMount.id == slot_data.block_id){
-                    this.$refs[slot_data.block_id][0].setData(this.setDataToBlockAfterMount.data);
+            for(let block of this.setDataToBlockAfterMount){
+                if(block.id == slot_data.block_id){
+                    this.$refs[block.id][0].setData(block.data);
+                    this.setDataToBlockAfterMount = this.setDataToBlockAfterMount.filter(x=>x.id!=block.id);
                 }
-                this.setDataToBlockAfterMount = null;
             }
         },
 		addBlockToEditor(block, block_i){
@@ -194,8 +193,8 @@ export default {
                 }else{
                     added = this.addBlockToEditor(b);
                 }
-                this.selectBlockAfterMount = added;
-                this.setDataToBlockAfterMount = {...added, data: b.data};
+                this.selectBlockAfterMount.push(added);
+                this.setDataToBlockAfterMount.push({...added, data: b.data});
                 index_correction++;
             }
         },
