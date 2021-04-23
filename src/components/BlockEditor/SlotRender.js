@@ -17,7 +17,7 @@ export default {
     render(h){
         // console.log("this.$slots.default", this.$slots.default)
         let errorTypes = this.mainEditor().errorTypes;
-        let all_available_slots_in_all_editors = this.mainEditor().registeredEditors.map(x=>x.$slots.default).flat().filter(x=>!errorTypes.includes(x.tag))
+        let all_available_slots_in_all_editors = this.mainEditor().registeredEditors.map(x=>x.$slots?.default).flat().filter(x=>x).filter(x=>!errorTypes.includes(x.tag))
         const slot = all_available_slots_in_all_editors.find(x=>(x.componentOptions||x.asyncMeta)?.tag == this.tag);
         if(slot) {
             if(slot.asyncMeta){
@@ -74,7 +74,6 @@ export default {
             this.setDataQuery.push(d);
         },
         slotMounted(_this){
-            // console.log('SlotRender: slot',_this,'mounted!');
             let rootComponent = _this.$children[0].$vnode.componentOptions?.Ctor.extendOptions.name;
             let error = false;
             if(rootComponent != 'block-content') {
@@ -83,13 +82,9 @@ export default {
             }
             if(this.dataRef) {
                 let original_component = this.dataRef[0].$children[0];
-                // console.log('SlotRender: dataRef original_component', original_component)
-                // console.log('SlotRender: dataRef _this', _this)
                 if(original_component){
                     _this._data = original_component._data;
                 }else{
-                    // let els = document.querySelectorAll('.propedit')
-                    // for(let el of els) el.innerHTML = ""
                     console.warn("Component not mounted");
                     error = true;
                 }
@@ -100,12 +95,12 @@ export default {
             if(!this.dataRef) for(let d of this.setDataQuery) this._setData(d);
             return this.$emit("slotMounted", {block_id: this.block_id, module: _this, error});
         },
-        _setData(d){
+        _setData(d){ 
             if(this.$children.length == 0) return;
             if(this.$children[0].setData){
                 return this.$children[0].setData(d);
             }else{
-                return new Error(`SlotRender: missing method setData()  in ${this.tag} template.`)
+                return new Error(`SlotRender: missing method setData() in ${this.tag} template.`)
             }
         },
         unselectAllChildren(user_event, from_main_editor){

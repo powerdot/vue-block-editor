@@ -1,11 +1,12 @@
 <template>
 	<div class="container">
 		<!-- <button @click='load'>load</button> -->
-		<block-editor ref="blockEditor" @Compiled="BlocksCompiled" @Imported="BlocksImported" group='editor_group' :values="newData">
+		<block-editor ref="blockEditor" @Compiled="BlocksCompiled" @Imported="BlocksImported" :values="newData" :blocksExclude='["calc"]'>
 			<textik name="Текстичек"/>
 			<linka name="Ссылочка" proto_id="_link_rnd"/>
 			<selectbox name="Селекбоксина" proto_id="_rnd_selectbox"/>
 			<inside name="Инсайдина" proto_id="_rnd_insider"/>
+			<calc name="Калькуляторша" proto_id="_rnd_calc"/>
 			<templateError>
 				Упс! Блок не принадлежит этому элементу!
 			</templateError>
@@ -22,96 +23,92 @@ let newData = [
         "name": "Инсайдина",
         "proto_id": "_rnd_insider",
         "tag": "inside",
-        "id": "_64472827_insider",
+        "active": true,
+        "id": "_13035846_insider",
         "data": {
             "title": "ЭТО ИНСАЙДИНА ОГО",
             "block_editor": [
                 {
-                    "name": "Калькулэйтор",
-                    "tag": "calc",
-                    "id": "59424535",
+                    "name": "Текстичек",
+                    "tag": "textik",
+                    "active": true,
+                    "id": "10545519",
                     "data": {
-                        "amount": 1,
-                        "count": 5
+                        "textColor": "black",
+                        "num": 4
                     }
                 },
                 {
                     "name": "Инсайдина",
                     "proto_id": "_rnd_insider",
                     "tag": "inside",
-                    "active": false,
-                    "id": "_69882980_insider",
+                    "active": true,
+                    "id": "_29253092_insider",
                     "data": {
                         "title": "ЭТО ИНСАЙДИНА ОГО",
-                        "block_editor": [
-                            {
-                                "name": "Инсайдина",
-                                "proto_id": "_rnd_insider",
-                                "tag": "inside",
-                                "active": true,
-                                "id": "_62350156_insider",
-                                "data": {
-                                    "title": "ЭТО ИНСАЙДИНА ОГО",
-                                    "block_editor": []
-                                }
-                            }
-                        ]
+                        "block_editor": []
                     }
                 }
             ]
         }
+    },
+    {
+        "name": "Ссылочка",
+        "proto_id": "_link_rnd",
+        "tag": "linka",
+        "active": false,
+        "id": "_link_28466793",
+        "data": {
+            "link": ""
+        }
+    },
+    {
+        "name": "Селекбоксина",
+        "proto_id": "_rnd_selectbox",
+        "tag": "selectbox",
+        "active": true,
+        "id": "_10032672_selectbox",
+        "data": {
+            "list": [
+                "один",
+                "два",
+                "три"
+            ],
+            "myval": "один",
+            "newVal": ""
+        }
+    },
+    {
+        "name": "Ссылочка",
+        "proto_id": "_link_rnd",
+        "tag": "linka",
+        "active": false,
+        "id": "_link_52459884",
+        "data": {
+            "link": "gdf"
+        }
+    },
+    {
+        "name": "Ссылочка",
+        "proto_id": "_link_rnd",
+        "tag": "linka",
+        "active": false,
+        "id": "_link_28254855",
+        "data": {
+            "link": "ggg"
+        }
+    },
+    {
+        "name": "Ссылочка",
+        "proto_id": "_link_rnd",
+        "tag": "linka",
+        "active": false,
+        "id": "_link_90594423",
+        "data": {
+            "link": "bbbb"
+        }
     }
 ];
-
-// [
-//     {
-//         "name": "Инсайдина",
-//         "id": "_30554490_insider",
-//         "tag": "inside",
-//         "data": {
-//             "title": "ЭТО ИНСАЙДИНА ОГО",
-//             "block_editor": [
-//                 {
-//                     "name": "Инсайдина",
-//                     "id": "_14048990_insider",
-//                     "tag": "inside",
-//                     "data": {
-//                         "title": "кекекекеке",
-//                         "block_editor": [
-//                             {
-//                                 "name": "Ссылочка",
-//                                 "id": "_link_58045909",
-//                                 "tag": "linka",
-//                                 "data": {
-//                                     "link": "fdgdfgdfgdfg"
-//                                 }
-//                             }
-//                         ]
-//                     }
-//                 },
-//                 {
-//                     "name": "Инсайдина",
-//                     "id": "_41131011_insider",
-//                     "tag": "inside",
-//                     "data": {
-//                         "title": "ЭТО ИНСАЙДИНА ОГО",
-//                         "block_editor": [
-//                             {
-//                                 "name": "Инсайдина",
-//                                 "id": "_79288599_insider",
-//                                 "tag": "inside",
-//                                 "data": {
-//                                     "title": "ЭТО ИНСАЙДИНА ОГО",
-//                                     "block_editor": []
-//                                 }
-//                             }
-//                         ]
-//                     }
-//                 }
-//             ]
-//         }
-//     }
-// ]
 
 
 export default {
@@ -121,11 +118,12 @@ export default {
 		textik: ()=> import("../components/BlockEditor/blocks/tekstik"),
 		linka: ()=> import("../components/BlockEditor/blocks/link"),
 		selectbox: ()=> import("../components/BlockEditor/blocks/selectbox"),
-		inside: ()=> import("../components/BlockEditor/blocks/inside")
+		inside: ()=> import("../components/BlockEditor/blocks/inside"),
+		calc: ()=> import("../components/BlockEditor/blocks/calc")
 	},
 	data: ()=>{
 		return {
-			newData: []//newData
+			newData: newData
 		}
 	},
 	methods: {

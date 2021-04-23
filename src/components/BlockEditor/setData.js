@@ -4,7 +4,7 @@ module.exports = (_this, applyData)=>{
     let block_editor = _this.$children[0]?.$children.find(x=>x.$vnode.componentOptions.Ctor.extendOptions.name == 'block-editor')
     if(block_editor){
         if(applyData.block_editor){
-            block_editor.setData(applyData.block_editor);
+            block_editor._setData(applyData.block_editor);
             delete applyData.block_editor;
         }
     }

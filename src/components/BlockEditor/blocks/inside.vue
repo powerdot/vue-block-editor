@@ -1,14 +1,9 @@
 <template>
 	<block-content>
         {{title}}
-        <block-editor ref="blockEditor" @Compiled="BlocksCompiled" layout="editor-only" group='editor_group'>
-            <textik name="Текстичек"/>
-			<inside name="Инсайдина" id="_rnd_insider"/>
-			<calc name="Калькулэйтор" id="_rnd_calc"/>
-            <templateError>Другая ошибка</templateError>
-		</block-editor>
+        <block-editor ref="blockEditor" @Compiled="BlocksCompiled" layout="editor-only" :blocksExclude='["linka", "selectbox"]'/>
 
-        <propertyPopup title="для инсайдиы">
+        <propertyPopup title="для инсайдины">
             Название блока: 
             <input type="text" v-model="title">
         </propertyPopup>
@@ -24,11 +19,7 @@ export default {
 	components: {
         BlockEditor,
         blockContent,
-        propertyPopup: propertyPopup,
-		linka: ()=> import("./link"),
-		inside: ()=> import("./inside"),
-		textik: ()=> import("./tekstik"),
-		calc: ()=> import("./calc"),
+        propertyPopup
 	},
 	data: ()=>{
 		return {
