@@ -1,6 +1,8 @@
 <template>
-	<div :class="{container: true, [layout]: true}">
-		<div :class="{blocks: true, [layout]: true}" v-if="layout_options.menu">
+	<div :class="['container', 'light',  ...(Object.keys(layout_options).filter(x=>layout_options[x]).map(x=>x+'_enabled'))]" 
+        :style='{"grid-template-columns": (layout_options.menu?"2fr":"")+" "+(layout_options.editor?"8fr":"")+" "+(layout_options.propertyEditor?"2fr":"") }'
+    >
+		<div :class="{blocks: true, }" v-if="layout_options.menu">
             <draggable
                 class='dragArea list-group'
                 :list="[block]"
@@ -14,9 +16,8 @@
                     {{block.name}}
                 </div>
             </draggable>
-            <button @click='Compile'>Compile!</button>
 		</div>
-		<div :class="{editor: true, [layout]: true, mainEditor: isThisMainEditor, blockEditorSelected: blockEditorSelected}" v-if="layout_options.editor" @click="editorClick">
+		<div :class="{editor: true,  mainEditor: isThisMainEditor, blockEditorSelected: blockEditorSelected}" v-if="layout_options.editor" @click="editorClick">
             <template v-if='layout_options.history'>
                 <div class='history'>
                     <button class='history_button undo' @click='HistoryUndo'>
@@ -65,10 +66,9 @@
                 </div>
                 <add-block :availableBlocks="availableBlocks" @addBlock="modalMenuAddBlock" :first="editor.length==0" :copyBuffer="mainEditor().copyBuffer" @pasteBlocks="pasteBlocks" :editorTags="activeTags"></add-block>
             </draggable>
-            <!-- <div style='position: absolute; font-size: 8pt;'>{{editor}}</div> -->
-		</div>
+        </div>
         
-        <div class="propedit">
+        <div class="propedit" v-if="layout_options.propertyEditor">
             <template v-if='selectedBlock'>
                 <SlotRender 
                     :key="'render_prop_'+selectedBlock.id" 
@@ -127,8 +127,13 @@ export default {
     },
     props: {
         layout: { // Layout редактора
-            type: String,
-            default: 'full'
+            type: Object,
+            default: ()=>({
+                menu: false,
+                editor: true,
+                history: false,
+                propertyEditor: false
+            })
         },
         historyLength: { // Длина массива для хранения историй
             type: Number,
@@ -155,8 +160,9 @@ export default {
             slotsMustBeMounted: 0, // number - количество блоков, которые необходимо замаунитить
             layout_options: { // свойства лейаута
                 menu: false, // отображение меню
-                editor: false, // отображение редактора
+                editor: true, // отображение редактора
                 history : false, // отображение элементов истории
+                propertyEditor: false, // отображение редактора элементов
             },
             selectedBlock: null, // объект выбранного блока, хранящийся в main editor, используется дл отображения попап пропов
             _cachedMainEditor: null, // кеш хранения ссылки на объект главного редактора
@@ -622,17 +628,11 @@ export default {
         // создание глобального буфера обмена редактора и отображение в нем возможности истории
         if(this.isThisEditorIsMain()){
             if(!window[`tempDragDataBlockEditor_${this._uid}`]) window[`tempDragDataBlockEditor_${this._uid}`] = {};
-            this.layout_options.history = true;
         }
 
         // определение параметров UI отсносительно названия layout'a
-        if(this.layout == "full"){
-            this.layout_options.menu = true;
-            this.layout_options.editor = true;
-        }else if(this.layout == "editor-only"){
-            this.layout_options.menu = false;
-            this.layout_options.editor = true;
-        }
+        this.layout_options = {...this.layout_options, ...this.layout}
+        console.log('this.layout_options',this.layout_options)
 
         // установка данных, указанных при инициализации в пропе values
         if(this.values.length != 0){
@@ -653,11 +653,6 @@ export default {
 <style lang="stylus" scoped>
 .container{
 	display: grid;
-	grid-template-columns: 2fr 8fr 2fr;
-
-    &.editor-only{
-        grid-template-columns: 12fr;
-    }
 
     .blocks{
         .block{
@@ -756,7 +751,7 @@ export default {
         }
     }
 
-    &.editor-only{
+    &.editor_enabled:not(.menu_enabled,.propertyEditor_enabled){
         grid-template-columns: auto;
         .editor{
             height auto;
@@ -765,11 +760,49 @@ export default {
     }
 }
 
+</style>
 
-
-
-
-
+<style lang="stylus" scoped>
+.container.light{
+    .blocks{
+        .block{
+            border-radius: 10px;
+            padding: 10px 20px;
+            background: none;
+            border: 1px solid white;
+            transition: 0.3s all;
+            &:hover{
+                border: 1px solid #eee;
+            }
+            &:not(.active){
+                cursor: default;
+            }
+        }
+    }
+    .editor{
+        .item{
+            margin: 5px 10px;
+        }
+        .block{
+            border-radius: 10px;
+            margin 0;
+            box-shadow 0 5px 20px rgba(0,0,0,.1);
+            padding: 10px 15px;
+            transition: 0.5s box-shadow;
+            &:hover{
+                box-shadow 0 0 30px rgba(0,0,0,.15);
+            }
+        }
+    }
+    .propedit{
+        background: #f3f3f3;
+        .show_property_popup{
+            background: white;
+            height: 100%;
+            padding 10px;
+        }
+    }
+}
 </style>
 
 <style lang="stylus">

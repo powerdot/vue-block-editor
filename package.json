@@ -1,11 +1,17 @@
 {
   "name": "vue-block-editor",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "main": "./src/components/BlockEditor/index.js",
+  "description": "Edit blocks and export json!",
+  "author": "IlyaDevman @powerdot",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "bili --name index --plugin vue --vue.css false"
   },
+  "files": [
+    "dist/*"
+  ],
   "dependencies": {
     "core-js": "^3.6.5",
     "vue": "^2.6.11",
@@ -17,8 +23,10 @@
     "@vue/cli-plugin-router": "~4.5.0",
     "@vue/cli-plugin-vuex": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
+    "bili": "^5.0.5",
+    "rollup-plugin-vue": "^6.0.0",
     "stylus": "^0.54.7",
     "stylus-loader": "^3.0.2",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.12"
   }
 }

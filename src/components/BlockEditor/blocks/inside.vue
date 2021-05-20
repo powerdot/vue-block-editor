@@ -1,7 +1,7 @@
 <template>
 	<block-content>
         {{title}}
-        <block-editor ref="blockEditor" @Compiled="BlocksCompiled" layout="editor-only" :blocksExclude='["linka", "selectbox"]'/>
+        <block-editor ref="blockEditor" @Compiled="BlocksCompiled" :blocksExclude='["linka", "selectbox"]'/>
 
         <propertyPopup title="для инсайдины">
             Название блока: 

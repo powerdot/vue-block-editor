@@ -1,7 +1,14 @@
 <template>
 	<div class="container">
 		<!-- <button @click='load'>load</button> -->
-		<block-editor ref="blockEditor" @Compiled="BlocksCompiled" @Imported="BlocksImported" :values="newData" :blocksExclude='["calc"]'>
+		<block-editor 
+            ref="blockEditor" 
+            @Compiled="BlocksCompiled" 
+            @Imported="BlocksImported" 
+            :values="newData" 
+            :blocksExclude='["calc"]' 
+            :layout="{menu: true, propertyEditor: true, history: false, editor: true}"
+        >
 			<textik name="Текстичек"/>
 			<linka name="Ссылочка" proto_id="_link_rnd"/>
 			<selectbox name="Селекбоксина" proto_id="_rnd_selectbox"/>
@@ -11,6 +18,8 @@
 				Упс! Блок не принадлежит этому элементу!
 			</templateError>
 			<!-- leftBottomPanel -->
+            <!-- plusIcon -->
+            <!-- rightBottomPanel -->
 		</block-editor>
 	</div>
 </template>
