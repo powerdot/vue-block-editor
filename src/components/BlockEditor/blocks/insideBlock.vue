@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import BlockEditor from '../index';
+import BlockEditor from '../main';
 import propertyPopup from '../property-popup';
 import blockContent from '../block-content.js'
 
@@ -47,7 +47,3 @@ export default {
 	}
 }
 </script>
-
-<style lang="stylus" scoped>
-
-</style>

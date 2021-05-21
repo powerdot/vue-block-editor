@@ -2,18 +2,22 @@
   "name": "vue-block-editor",
   "version": "0.1.0",
   "private": false,
-  "main": "./src/components/BlockEditor/index.js",
+  "main": "./dist/BlockEditor.common.js",
   "description": "Edit blocks and export json!",
   "author": "IlyaDevman @powerdot",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "bili --name index --plugin vue --vue.css false"
+    "build": "vue-cli-service build",
+    "build-bundle": "vue-cli-service build --target lib --name BlockEditor --dest ./dist src/components/BlockEditor/index.js"
   },
   "files": [
     "dist/*"
   ],
   "dependencies": {
+    "@vue/compiler-sfc": "^3.0.11",
     "core-js": "^3.6.5",
+    "node-sass": "^4.0.0",
+    "sass-loader": "^7.0.0",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
     "vuex": "^3.4.0"

@@ -8,8 +8,11 @@
             </svg>
             <div class="blockMenuModal">
                 <template v-if='!!editorTags.find(x=>copyBuffer.map(y=>y.tag).includes(x))'>
-                    <div class="item block" @click="paste">
-                        paste
+                    <div class="item block paste" @click="paste">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-files" viewBox="0 0 16 16">
+                            <path d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/>
+                        </svg>
+                        Paste
                     </div>
                 </template>
                 <div class="item block" v-for="menuBlock in availableBlocks.filter(x=> editorTags.includes(x.tag) )" :key="menuBlock.tag+'_menuModalBlock'" @click="modalMenuAddBlock($event, menuBlock)">
@@ -23,6 +26,7 @@
 <script>
 
 export default {
+    name: "block-editor-add-block",
 	components: {},
     props: {
         newBlockIndex: {
@@ -47,9 +51,7 @@ export default {
         }
     },
 	data: ()=>{
-		return {
-            
-        }
+		return {}
 	},
 	methods: {
 		modalMenuAddBlock(e, block){
@@ -62,14 +64,11 @@ export default {
             e.stopPropagation();
             e.preventDefault();
         }
-	},
-	mounted(){
-        
 	}
 }
 </script>
 
-<style lang="stylus" scoped>
+<style lang="scss" scoped>
     .addBlock{
         opacity: 0;
         height: 3px;
@@ -88,7 +87,7 @@ export default {
             padding-bottom: 30px;
         }
         &:hover{
-            opacity 1;
+            opacity: 1;
         }
         .line{
             position: relative;
@@ -127,7 +126,27 @@ export default {
                     padding: 5px 10px;
                     cursor: pointer;
                     &:hover{
-                        background #eee;
+                        background: #eee;
+                    }
+                    &.paste{
+                        background: #ececec;
+                        border-radius: 5px;
+                        margin-left: 12px;
+                        margin-top: 5px;
+                        margin-right: 5px;
+                        color: black;
+                        font-size: 10pt;
+                        display: inline-block;
+                        margin-bottom: 4px;
+                        .bi-files{
+                            position: relative;
+                            top: 2px;
+                            margin-right: 0px;
+                            height: 10pt;
+                        }
+                        &:hover{
+                            background: #e2e2e2;
+                        }
                     }
                 }
             }

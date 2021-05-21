@@ -44,9 +44,9 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
+<style lang="scss" scoped>
 .property_popup{
-    cursor default;
+    cursor: default;
     z-index: 10;
     
     .head{

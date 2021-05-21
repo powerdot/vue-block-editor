@@ -1,5 +1,5 @@
 <template>
-	<div class="container">
+	<div class="container" style="height: 100vh;">
 		<!-- <button @click='load'>load</button> -->
 		<block-editor 
             ref="blockEditor" 
@@ -9,14 +9,14 @@
             :blocksExclude='["calc"]' 
             :layout="{menu: true, propertyEditor: true, history: false, editor: true}"
         >
-			<textik name="Текстичек"/>
-			<linka name="Ссылочка" proto_id="_link_rnd"/>
-			<selectbox name="Селекбоксина" proto_id="_rnd_selectbox"/>
-			<inside name="Инсайдина" proto_id="_rnd_insider"/>
-			<calc name="Калькуляторша" proto_id="_rnd_calc"/>
-			<templateError>
+			<textEditorBlock name="Text Editor"/>
+			<selectBoxBlock name="Selectbox" proto_id="_link_sb"/>
+			<imageBlock name="Image" proto_id="_rnd_img"/>
+			<dividerBlock name="Divider" proto_id="_rnd_div"/>
+			<insideBlock name="Block with BlockEditor" proto_id="_rnd_bwb"/>
+			<!-- <templateError>
 				Упс! Блок не принадлежит этому элементу!
-			</templateError>
+			</templateError> -->
 			<!-- leftBottomPanel -->
             <!-- plusIcon -->
             <!-- rightBottomPanel -->
@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import BlockEditor from '../components/BlockEditor';
+import BlockEditor from '../components/BlockEditor/main.vue';
 
 let newData = [
     {
@@ -118,17 +118,18 @@ let newData = [
         }
     }
 ];
+newData = [];
 
 
 export default {
 	name: 'Home',
 	components: {
 		BlockEditor,
-		textik: ()=> import("../components/BlockEditor/blocks/tekstik"),
-		linka: ()=> import("../components/BlockEditor/blocks/link"),
-		selectbox: ()=> import("../components/BlockEditor/blocks/selectbox"),
-		inside: ()=> import("../components/BlockEditor/blocks/inside"),
-		calc: ()=> import("../components/BlockEditor/blocks/calc")
+		textEditorBlock: ()=> import("../components/BlockEditor/blocks/textEditorBlock"),
+		selectBoxBlock: ()=> import("../components/BlockEditor/blocks/selectBoxBlock"),
+		insideBlock: ()=> import("../components/BlockEditor/blocks/insideBlock"),
+		imageBlock: ()=> import("../components/BlockEditor/blocks/imageBlock"),
+		dividerBlock: ()=> import("../components/BlockEditor/blocks/dividerBlock")
 	},
 	data: ()=>{
 		return {
@@ -151,7 +152,3 @@ export default {
 	}
 }
 </script>
-
-<style lang="stylus" scoped>
-
-</style>

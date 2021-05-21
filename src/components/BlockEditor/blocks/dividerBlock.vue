@@ -1,9 +1,10 @@
 <template>
 	<block-content>
-        <button @click="count+=amount">+</button> {{count}} <button @click="count-=amount">-</button>
+        <input type="text" placeholder="ссылочка" v-model="link">
+        - {{link}}
 
-		<propertyPopup title="Калькулятор">
-            На сколько единиц: <input type="number" v-model="amount">
+		<propertyPopup title="сылочкины">
+            здесь пропсы
         </propertyPopup>
 	</block-content>
 </template>
@@ -19,8 +20,7 @@ export default {
 	},
 	data: ()=>{
 		return {
-            amount: 1,
-            count: 0
+            link: ''
         }
 	},
 	methods: {
@@ -37,7 +37,3 @@ export default {
 	}
 }
 </script>
-
-<style lang="stylus" scoped>
-
-</style>

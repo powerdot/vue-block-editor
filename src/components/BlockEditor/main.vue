@@ -12,7 +12,7 @@
                 :move="moveBlock"
                 v-for="block in availableBlocks" :key="block.tag"
             >
-                <div :class="{block:true, active: block.active, [`slot-draggable-${block.tag}`]: true, item: true}">
+                <div :class="{item:true, active: block.active, [`slot-draggable-${block.tag}`]: true, item: true}">
                     {{block.name}}
                 </div>
             </draggable>
@@ -104,16 +104,12 @@ function countSlotsFromProtoObject(data){
     return counter
 }
 
-function parseIncludesExcludes(includes, excludes){
-    
-}
-
 let errorTypes = ['propertyEditorTemplateError', 'templateError'];
 
 import SlotRender from './SlotRender.js';
 import draggable from 'vuedraggable'
-import clickOutside from './click_outside'
-import addBlock from './addBlock'
+import clickOutside from './click_outside.js'
+import addBlock from './addBlock.vue'
 
 export default {
 	name: 'block-editor',
@@ -593,7 +589,6 @@ export default {
                 this.history.compiled = this.history.compiled.slice(-this.historyLength);
                 this.history.step = null;
                 // console.log("editorChanged!", this.history.compiled)
-                console.log("editorChanged!", this.history.compiled)
             })
         },
 
@@ -632,7 +627,7 @@ export default {
 
         // определение параметров UI отсносительно названия layout'a
         this.layout_options = {...this.layout_options, ...this.layout}
-        console.log('this.layout_options',this.layout_options)
+        // console.log('this.layout_options',this.layout_options)
 
         // установка данных, указанных при инициализации в пропе values
         if(this.values.length != 0){
@@ -650,13 +645,14 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
+<style lang="scss" scoped>
 .container{
 	display: grid;
+    height: 100%;
 
     .blocks{
-        .block{
-            cursor all-scroll;
+        .item{
+            cursor: all-scroll;
             padding: 5px 10px;
             margin: 5px;
             background: #f3f3f3;
@@ -672,10 +668,14 @@ export default {
     }
 
     .editor{
-        background #eee;
-        height 100vh;
-        white-space pre-wrap;
+        background: #eee;
+        height: 100vh;
+        white-space: pre-wrap;
         border: 1px solid white;
+        max-height: 100%;
+        // overflow: hidden;
+        // overflow-y: scroll;
+
         &.blockEditorSelected{
             border: 1px solid blue;
         }
@@ -699,7 +699,7 @@ export default {
             .removeBlock{
                 opacity: 0.2;
                 position: absolute;
-                cursor pointer;
+                cursor: pointer;
                 top: 9px;
                 right: 15px;
                 transition: 0.3s all;
@@ -707,7 +707,7 @@ export default {
             .copyBlock{
                 opacity: 0.2;
                 position: absolute;
-                cursor pointer;
+                cursor: pointer;
                 top: 9px;
                 right: 35px;
                 transition: 0.3s all;
@@ -733,12 +733,17 @@ export default {
                     opacity: 1;
                 }
             }
+            &.ghost{
+                background: white;
+                padding: 5px 10px;
+                border-radius: 5px;
+                opacity: 0.7;
+            }
         }
 
         .block{
-            margin 2px 10px;
-            background white;
-            // cursor pointer;
+            margin: 2px 10px;
+            background: #fff;
             padding: 5px;
             border: 1px solid white;
             &.selected{
@@ -754,7 +759,7 @@ export default {
     &.editor_enabled:not(.menu_enabled,.propertyEditor_enabled){
         grid-template-columns: auto;
         .editor{
-            height auto;
+            height: auto;
             min-height: 50px;
         }
     }
@@ -762,10 +767,10 @@ export default {
 
 </style>
 
-<style lang="stylus" scoped>
+<style lang="scss" scoped>
 .container.light{
     .blocks{
-        .block{
+        .item{
             border-radius: 10px;
             padding: 10px 20px;
             background: none;
@@ -785,12 +790,12 @@ export default {
         }
         .block{
             border-radius: 10px;
-            margin 0;
-            box-shadow 0 5px 20px rgba(0,0,0,.1);
+            margin: 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,.1);
             padding: 10px 15px;
             transition: 0.5s box-shadow;
             &:hover{
-                box-shadow 0 0 30px rgba(0,0,0,.15);
+                box-shadow: 0 0 30px rgba(0,0,0,.15);
             }
         }
     }
@@ -799,13 +804,13 @@ export default {
         .show_property_popup{
             background: white;
             height: 100%;
-            padding 10px;
+            padding: 0 10px;
         }
     }
 }
 </style>
 
-<style lang="stylus">
+<style lang="scss">
 .editor .item.ghost .property_popup{
     display: none;
 }

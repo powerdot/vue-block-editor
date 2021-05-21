@@ -9,10 +9,10 @@
 </template>
 
 
-<style lang="stylus">
+<style lang="scss">
 body{
-  margin 0;
-  font-family Avenir, Helvetica, Arial, sans-serif
+  margin: 0;
+  font-family: Avenir, Helvetica, Arial, sans-serif
 }
 // #app
 //   font-family Avenir, Helvetica, Arial, sans-serif

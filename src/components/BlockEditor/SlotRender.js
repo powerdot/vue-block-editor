@@ -19,33 +19,63 @@ export default {
         let errorTypes = this.mainEditor().errorTypes;
         let all_available_slots_in_all_editors = this.mainEditor().registeredEditors.map(x=>x.$slots?.default).flat().filter(x=>x).filter(x=>!errorTypes.includes(x.tag))
         const slot = all_available_slots_in_all_editors.find(x=>(x.componentOptions||x.asyncMeta)?.tag == this.tag);
+        // console.log("got all_available_slots_in_all_editors", all_available_slots_in_all_editors);
+        // console.log("got slot", slot);
         if(slot) {
-            if(slot.asyncMeta){
-                return (<div></div>);
+            let r = undefined;
+            let renderFunction = slot.asyncMeta?slot.asyncFactory():slot.asyncFactory;
+            if(!renderFunction) renderFunction = slot.componentOptions.Ctor.extendOptions;
+            // console.log("renderFunction", renderFunction)
+            if(!renderFunction) return h('div');
+            if(!this.dataRef){
+                // block-editor slot
+                // console.log("CREATING SLOT", slot)
+                r = h(renderFunction, this.$slots.default);
             }else{
-                let r = undefined;
-                if(!this.dataRef){
-                    // block-editor slot
-                    // console.log("CREATING SLOT", slot)
-                    r = h(slot.asyncFactory, this.$slots.default);
-                }else{
-                    // prop-editor slot
-                    // console.log("CREATING SLOT BY DATAREF", slot)
-                    // console.log("CREATING SLOT BY DATAREF", this.dataRef[0])
-                    if(this.dataRef[0]){
-                        if(!this.dataRef[0].error){
-                            r = h(slot.asyncFactory, {class:'show_property_popup', attrs: {isPropEditor: 'yes'}}, this.$slots.default);
-                        }else{
-                            r = renderError(this, h, 'propertyEditorTemplateError', 'There is problem with template.');
-                        }
+                // prop-editor slot
+                // console.log("CREATING SLOT BY DATAREF", slot)
+                // console.log("CREATING SLOT BY DATAREF", this.dataRef[0])
+                if(this.dataRef[0]){
+                    if(!this.dataRef[0].error){
+                        r = h(renderFunction, {class:'show_property_popup', attrs: {isPropEditor: 'yes'}}, this.$slots.default);
                     }else{
-                        r = (<div></div>);
+                        r = renderError(this, h, 'propertyEditorTemplateError', 'There is problem with template.');
                     }
-                    
+                }else{
+                    r = h("div");
                 }
-                return (r);
+                
             }
+            return (r);
         }
+        // if(slot) {
+        //     if(slot.asyncMeta){
+        //         console.log("NO SLOT", slot)
+        //         return h("div");
+        //     }else{
+        //         let r = undefined;
+        //         if(!this.dataRef){
+        //             // block-editor slot
+        //             console.log("CREATING SLOT", slot)
+        //             r = h(slot.asyncFactory, this.$slots.default);
+        //         }else{
+        //             // prop-editor slot
+        //             console.log("CREATING SLOT BY DATAREF", slot)
+        //             // console.log("CREATING SLOT BY DATAREF", this.dataRef[0])
+        //             if(this.dataRef[0]){
+        //                 if(!this.dataRef[0].error){
+        //                     r = h(slot.asyncFactory, {class:'show_property_popup', attrs: {isPropEditor: 'yes'}}, this.$slots.default);
+        //                 }else{
+        //                     r = renderError(this, h, 'propertyEditorTemplateError', 'There is problem with template.');
+        //                 }
+        //             }else{
+        //                 r = h("div");
+        //             }
+                    
+        //         }
+        //         return (r);
+        //     }
+        // }
 
         console.log(this)
         console.log("REGISTERED EDITORS", this.mainEditor().registeredEditors)
