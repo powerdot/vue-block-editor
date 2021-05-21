@@ -23,7 +23,7 @@
 		</block-editor>
 
         <!-- Wow https://getwaves.io/ -->
-        <svg class="darkWave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#2e2e2e" fill-opacity="1" d="M0,224L48,234.7C96,245,192,267,288,250.7C384,235,480,181,576,170.7C672,160,768,192,864,202.7C960,213,1056,203,1152,181.3C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
+        <!-- <svg class="darkWave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#2e2e2e" fill-opacity="1" d="M0,224L48,234.7C96,245,192,267,288,250.7C384,235,480,181,576,170.7C672,160,768,192,864,202.7C960,213,1056,203,1152,181.3C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg> -->
         <div class="darkScreen">
             <h2>How does it works?</h2>
             <div class="step">
@@ -129,12 +129,11 @@ h2{
 .my-block-editor{
     border-top: 1px solid #eee;
     box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
-    height: calc(100vh - 90px);
     min-height: 600px;
 }
 
 .darkWave{
-    margin-top: -350px;
+    margin-top: -250px;
     display: block;
 }
 .darkScreen{
@@ -142,6 +141,10 @@ h2{
     padding-top: 0;
     color: #dadada;
     min-height: 50px;
+    padding-top: 150px;
+    margin-top: -100px;
+    position: relative;
+    z-index: 1;
     h2{
         margin-top: 0;
         color: white;
@@ -198,6 +201,9 @@ h2{
             color: white;
         }
     }
+    .code{
+        width: calc(100% - 60px);
+    }
 }
 
 .to_gh{
@@ -221,14 +227,24 @@ h2{
 .lightWave{
     margin-top: -150px;
     display: block;
+    position: relative;
+    z-index: 1;
 }
 .footer{
     text-align: center;
     background: #f3f4f5;
     padding: 24px 0;
-    margin-top: -170px;
+    padding-bottom: calc(100vw / 5);
+    position: relative;
+    z-index: 1;
     a{
         color: black;
     }
 }
+</style>
+
+<style lang="scss">
+    .container .editor .item{
+        z-index: 2 !important;
+    }
 </style>
