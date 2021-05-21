@@ -7,6 +7,7 @@
             @Compiled="BlocksCompiled" 
             @Imported="BlocksImported" 
             :blocksExclude='["calc"]' 
+            :values="welcomeData"
             :layout="{menu: true, propertyEditor: true, history: false, editor: true}"
         >
 			<textEditorBlock name="Text Editor"/>
@@ -21,6 +22,8 @@
             <!-- plusIcon -->
             <!-- rightBottomPanel -->
 		</block-editor>
+
+        <button class="compile" @click="compile">Compile to JSON</button>
 
         <!-- Wow https://getwaves.io/ -->
         <!-- <svg class="darkWave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#2e2e2e" fill-opacity="1" d="M0,224L48,234.7C96,245,192,267,288,250.7C384,235,480,181,576,170.7C672,160,768,192,864,202.7C960,213,1056,203,1152,181.3C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg> -->
@@ -88,6 +91,7 @@
 <script>
 import BlockEditor from '../components/BlockEditor/main.vue';
 import VueEmbedGist from "vue-embed-gist";
+let welcomeData = require("../welcomeData");
 
 export default {
 	name: 'Home',
@@ -102,7 +106,9 @@ export default {
 		dividerBlock: ()=> import("../components/BlockEditor/blocks/dividerBlock")
 	},
 	data: ()=>{
-		return {}
+		return {
+            welcomeData: welcomeData
+        }
 	},
 	methods: {
 		BlocksCompiled(data){
@@ -110,7 +116,10 @@ export default {
 		},
 		BlocksImported(){
 			console.log("Blocks Imported!")
-		}
+		},
+        compile(){
+            this.$refs.blockEditor.Compile();
+        }
 	},
     mounted(){}
 }
@@ -132,6 +141,26 @@ h2{
     min-height: 600px;
 }
 
+.compile{
+    position: relative;
+    z-index: 2;
+    top: -131px;
+    left: 40px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+    border: 1px solid black;
+    background: white;
+    cursor: pointer;
+    &:hover{
+        border-color: #3f51b5;
+    }
+    &:active{
+        color: #3f51b5;
+    }
+}
+
 .darkWave{
     margin-top: -250px;
     display: block;
@@ -142,7 +171,7 @@ h2{
     color: #dadada;
     min-height: 50px;
     padding-top: 150px;
-    margin-top: -100px;
+    margin-top: -150px;
     position: relative;
     z-index: 1;
     h2{

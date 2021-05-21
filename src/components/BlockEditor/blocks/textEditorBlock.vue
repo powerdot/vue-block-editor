@@ -16,8 +16,7 @@ export default {
 	},
 	data: ()=>{
 		return {
-            text: 'Type your text...',
-			editorOptions: {}
+            text: 'Type your text...'
         }
 	},
 	methods: {
