@@ -1,7 +1,7 @@
 <template>
 	<block-content>
 		<div class="iframeHolder">
-        	<iframe :src="`http://www.youtube.com/embed/${ytid}`" frameborder="0"></iframe>
+        	<iframe :src="`//www.youtube.com/embed/${ytid}`" frameborder="0"></iframe>
 		</div>
 
 		<propertyPopup title="YouTube setup">
