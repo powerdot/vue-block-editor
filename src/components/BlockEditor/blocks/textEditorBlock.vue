@@ -1,34 +1,23 @@
 <template>
 	<block-content>
-        <div :style='`color:${textColor}`'>текстик: {{num}}</div>
-		<button @click='num++'>+</button>
-
-		<propertyPopup title="Для текстика">
-			Цвет текста: 
-			<select v-model='textColor'>
-				<option value="black">Черный</option>
-				<option value="pink">Розовый</option>
-				<option value="green">Зеленый</option>
-				<option value="red">Красный</option>
-			</select>
-        </propertyPopup>
+        <vue-editor v-model='text'/>
 	</block-content>
 </template>
 
 <script>
 
-import propertyPopup from '../property-popup';
-import blockContent from '../block-content.js'
+import blockContent from '../block-content.js';
+import { VueEditor } from "vue2-editor";
 
 export default {
 	components: {
-		propertyPopup,
-		blockContent
+		blockContent,
+		VueEditor
 	},
 	data: ()=>{
 		return {
-            textColor: 'black',
-			num: 0
+            text: 'Type your text...',
+			editorOptions: {}
         }
 	},
 	methods: {

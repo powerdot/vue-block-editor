@@ -48,6 +48,7 @@ export default {
 .property_popup{
     cursor: default;
     z-index: 10;
+    padding-top: 10px;
     
     .head{
         h2{

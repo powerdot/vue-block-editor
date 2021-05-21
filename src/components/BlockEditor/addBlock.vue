@@ -122,6 +122,7 @@ export default {
                 border: 1px solid #eee;
                 display: none;
                 z-index: 10000;
+                width: max-content;
                 .block{
                     padding: 5px 10px;
                     cursor: pointer;

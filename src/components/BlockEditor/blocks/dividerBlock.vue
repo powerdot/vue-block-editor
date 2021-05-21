@@ -1,10 +1,12 @@
 <template>
 	<block-content>
-        <input type="text" placeholder="ссылочка" v-model="link">
-        - {{link}}
+        <div :class='{divider:true, [divider_type]: true}'></div>
 
-		<propertyPopup title="сылочкины">
-            здесь пропсы
+		<propertyPopup title="Divider options">
+            Select divider type: 
+            <select v-model='divider_type'>
+				<option v-for='t of divider_types' :key='t.type+"example_div_type"' :value='t.type'>{{t.name}}</option>
+			</select>
         </propertyPopup>
 	</block-content>
 </template>
@@ -20,7 +22,13 @@ export default {
 	},
 	data: ()=>{
 		return {
-            link: ''
+            divider_type: 'solid',
+			divider_types: [
+				{name: 'Solid', type: 'solid'},
+				{name: 'Dashed', type: 'dashed'}, 
+				{name: 'Coloured', type: 'coloured'},
+				{name: '3 dots', type: 'threedots'},
+			]
         }
 	},
 	methods: {
@@ -37,3 +45,31 @@ export default {
 	}
 }
 </script>
+
+<style lang="scss" scoped>
+	.divider{
+    	margin-top: 18px;
+		&.solid{
+	    	border: 2px solid;
+		}
+		&.dashed{
+	    	border: 2px dashed;
+		}
+		&.coloured{
+			height: 4px;
+			background: linear-gradient(45deg, #2196f3, #673ab7);
+			border-radius: 10px;
+		}
+		&.threedots{
+			letter-spacing: 10px;
+			text-align: center;
+			color: #3f51b5;
+			font-size: 10pt;
+			height: 4px;
+			line-height: 5px;
+			&:after{
+				content: "•••";
+			}
+		}
+	}
+</style>

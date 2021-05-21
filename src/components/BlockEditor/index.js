@@ -1,13 +1,17 @@
 import BlockEditor from "./main.vue";
-import linkBlock from "../BlockEditor/blocks/link.vue";
-import calcBlock from "../BlockEditor/blocks/calc.vue";
-// import textBlock from "../BlockEditor/blocks/text.vue";
+import contactForm from "../BlockEditor/blocks/contactForm.vue";
+import dividerBlock from "../BlockEditor/blocks/dividerBlock.vue";
+import insideBlock from "../BlockEditor/blocks/insideBlock.vue";
+import textEditorBlock from "../BlockEditor/blocks/textEditorBlock.vue";
+import youtubeBlock from "../BlockEditor/blocks/youtubeBlock.vue";
 
 export default {
     Editor: BlockEditor,
     defaultBlocks: {
-        linkBlock,
-        calcBlock,
-        // textBlock
+        contactForm,
+        dividerBlock,
+        insideBlock,
+        textEditorBlock,
+        youtubeBlock
     }
 };

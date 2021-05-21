@@ -759,7 +759,7 @@ export default {
     &.editor_enabled:not(.menu_enabled,.propertyEditor_enabled){
         grid-template-columns: auto;
         .editor{
-            height: auto;
+            height: fit-content;
             min-height: 50px;
         }
     }
@@ -770,6 +770,7 @@ export default {
 <style lang="scss" scoped>
 .container.light{
     .blocks{
+        border-right: 1px solid #eee;
         .item{
             border-radius: 10px;
             padding: 10px 20px;
@@ -785,6 +786,13 @@ export default {
         }
     }
     .editor{
+        background: white;
+        min-height: calc(100% - 22px);
+        height: -webkit-fill-available;
+        
+        &.blockEditorSelected{
+            border-color: #2196f3;
+        }
         .item{
             margin: 5px 10px;
         }
@@ -794,13 +802,17 @@ export default {
             box-shadow: 0 5px 20px rgba(0,0,0,.1);
             padding: 10px 15px;
             transition: 0.5s box-shadow;
+            &.selected{
+                border: 1px solid #2196f3;
+            }
             &:hover{
                 box-shadow: 0 0 30px rgba(0,0,0,.15);
             }
         }
     }
     .propedit{
-        background: #f3f3f3;
+        background: #ffffff;
+        border-left: 1px solid #eee;
         .show_property_popup{
             background: white;
             height: 100%;
