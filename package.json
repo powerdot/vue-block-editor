@@ -12,7 +12,7 @@
   },
   "files": [
     "dist/*",
-    "src/components/*"
+    "src/*"
   ],
   "dependencies": {
     "@vue/compiler-sfc": "^3.0.11",
