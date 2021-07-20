@@ -11,7 +11,8 @@
     "build-bundle": "vue-cli-service build --target lib --name BlockEditor --dest ./dist src/components/BlockEditor/index.js"
   },
   "files": [
-    "dist/*"
+    "dist/*",
+    "src/components/BlockEditor/blocks/*"
   ],
   "dependencies": {
     "@vue/compiler-sfc": "^3.0.11",
