@@ -5,7 +5,7 @@ creating... wait for first realese!
 Universal drag&drop block builder.
 
 ## Demo
-[Right there!](https://ilyich.ru/vue-block-editor/)
+[Right there!](https://powerdot.github.io/vue-block-editor/)
 
 ## Usage
 ```
